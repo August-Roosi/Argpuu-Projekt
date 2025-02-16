@@ -110,6 +110,27 @@ const useStore = create<AppState>((set, get) => ({
     });
   },
   deleteNode: (nodeId: string) => {
+    console.log("Deleting node with id:", nodeId);
+
+    const deleteNodeRequest = async () => {
+      const csrfToken = getCSRFToken(); 
+      const response = await fetch(`/api/arguments/${nodeId}/`, {
+        method: 'DELETE',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      } else {
+        console.log(response.status)
+      }
+    };
+
+    deleteNodeRequest();
+
     set({
       nodes: get().nodes.filter((node) => node.id !== nodeId),
     });
@@ -120,7 +141,7 @@ const useStore = create<AppState>((set, get) => ({
     console.log("Creating node with tekst:", tekst);
 
 
-    const saveFlowData = async () => {
+    const createNodeRequest = async () => {
       const csrfToken = getCSRFToken(); // CSRF token method in React
       const response = await fetch('/api/arguments/', {
         method: 'POST',
@@ -137,18 +158,18 @@ const useStore = create<AppState>((set, get) => ({
           }}),
       });
   
-      // Ensure you return the JSON response if the request is successful
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      } else {
+        console.log("Node made successfully");
       }
-      return response.json(); // Parse and return JSON from the response
+      return response.json(); 
     };
 
 
-    const response = await saveFlowData();
+    const response = await createNodeRequest();
     response["type"] = "argument"
     const newNode: ArgumentNode = response;
-    console.log("Node made successfully:", newNode);
 
     set({
       nodes: [...get().nodes, newNode], // Add the new node
