@@ -54,7 +54,7 @@ function Flow() {
   return (
     <div style={{ height: '100%' }}>
       {isPopupOpen && nodes.filter(node => 'isTopic' in node.data && node.data.isTopic).length === 0 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-red-100 bg-opacity-10 z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-xs">
           <div
             className="rounded-lg shadow-lg p-6 max-w-md w-full bg-stone-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4 ">Kirjuta enda väide</h3>
