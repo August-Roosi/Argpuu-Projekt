@@ -3,7 +3,7 @@ import {
   Controls,
   Background,
 } from '@xyflow/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 
 import '@xyflow/react/dist/style.css';
@@ -14,6 +14,12 @@ import useStore from './store';
 import { useShallow } from 'zustand/react/shallow';
 
 
+interface FlowProps {
+  argumentMapId: string;
+}
+
+
+
 const selector = (state: AppState) => ({
   nodes: state.nodes,
   edges: state.edges,
@@ -21,16 +27,28 @@ const selector = (state: AppState) => ({
   onEdgesChange: state.onEdgesChange,
   onConnect: state.onConnect,
   createNode: state.createNode,
+  getMapNodes: state.getMapNodes,
 });
 
 
 
 
-function Flow() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, createNode } = useStore(
+function Flow({ argumentMapId }: FlowProps) {
+
+
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMapNodes, createNode } = useStore(
     useShallow(selector),
   );
 
+
+  useEffect(() => {
+    console.log("Flow component has mounted.");
+    console.log("Argument Map ID:", argumentMapId);
+    if (argumentMapId) {
+      setIsPopupOpen(false); 
+      getMapNodes(argumentMapId);
+    }
+  }, [argumentMapId]); 
   
   
   const [isPopupOpen, setIsPopupOpen] = useState(true); // Popup state
@@ -45,8 +63,8 @@ function Flow() {
 
   const handleCreateNode = () => {
     if (nodeName.trim()) {
-      createNode(nodeName, true); // Create the first node
-      setIsPopupOpen(false); // Close the popup
+      createNode(nodeName, true); 
+      setIsPopupOpen(false); 
     }
   };
 

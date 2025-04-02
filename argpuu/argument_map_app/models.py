@@ -1,18 +1,36 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import User
 
+
+class ArgumentMap(models.Model):
+    title = models.CharField(max_length=255)  
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="argument_trees")
+    root_argument = models.OneToOneField("Argument", on_delete=models.CASCADE, related_name="root_of_tree")
+    contributors = models.ManyToManyField(User, related_name="collaborations", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)  
+    updated_at = models.DateTimeField(auto_now=True)  
+
+    def __str__(self):
+        return f"Argument Map (id: {self.id}, title: {self.title})"
 
 class Argument(models.Model):
-    content = models.TextField()  # Textual content of the argument
-    is_topic = models.BooleanField(default=False)  # Indicates if it's the main topic or a regular argument
-    created_at = models.DateTimeField(auto_now_add=True)  # Automatic creation timestamp
-    updated_at = models.DateTimeField(auto_now=True)  # Automatic update timestamp
-    position_x = models.FloatField(default=0)  # X-coordinate of the argument on the canvas
-    position_y = models.FloatField(default=0)  # Y-coordinate of the argument on the canvas
+    content = models.TextField()
+    is_root = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    position_x = models.FloatField(default=0)
+    position_y = models.FloatField(default=0)
     
     def __str__(self):
-        return f"Argument (id: {self.id}, {'Topic' if self.is_topic else 'Regular'})"
+        return f"Argument (id: {self.id}, {'Root' if self.is_root else 'Regular'})"
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['id'], condition=models.Q(is_root=True), name="unique_root_per_map")
+        ]
+
 
 
 class Operator(models.Model):
@@ -22,9 +40,9 @@ class Operator(models.Model):
         ('undefined', 'Undefined'),
     ]
     stance = models.CharField(
-        max_length=10,  # Ensure the max length covers the longest choice ('undefined' has 9 characters)
+        max_length=10,  
         choices=STANCE_CHOICES,
-        default='undefined',  # Default value if no value is provided
+        default='undefined',  
     )
     
     
@@ -32,9 +50,9 @@ class Operator(models.Model):
         ('AND', 'AND Operator'),
         ('OR', 'OR Operator'),
     ]
-    type = models.CharField(max_length=3, choices=OPERATOR_TYPE_CHOICES)  # AND/OR type
-    created_at = models.DateTimeField(auto_now_add=True)  # Automatic creation timestamp
-    updated_at = models.DateTimeField(auto_now=True)  # Automatic update timestamp
+    type = models.CharField(max_length=3, choices=OPERATOR_TYPE_CHOICES)  
+    created_at = models.DateTimeField(auto_now_add=True)  
+    updated_at = models.DateTimeField(auto_now=True)  
 
     def __str__(self):
         return f"Operator (id: {self.id}, type: {self.get_type_display()})"
@@ -52,8 +70,8 @@ class Connection(models.Model):
     output_object_id = models.PositiveIntegerField()
     output_object = GenericForeignKey('output_content_type', 'output_object_id')
 
-    created_at = models.DateTimeField(auto_now_add=True)  # Automatic creation timestamp
-    updated_at = models.DateTimeField(auto_now=True)  # Automatic update timestamp
+    created_at = models.DateTimeField(auto_now_add=True)  
+    updated_at = models.DateTimeField(auto_now=True)  
 
     def __str__(self):
         return f"Connection (Input: {self.input_object}, Output: {self.output_object})"
@@ -61,8 +79,8 @@ class Connection(models.Model):
 
 class Log(models.Model):
     argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="logs")
-    timestamp = models.DateTimeField(auto_now_add=True)  # When the change was made
-    change_description = models.TextField()  # Description of what changed
+    timestamp = models.DateTimeField(auto_now_add=True)  
+    change_description = models.TextField()  
 
     def __str__(self):
         return f"Log (Argument id: {self.argument.id}, timestamp: {self.timestamp})"

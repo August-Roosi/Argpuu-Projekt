@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Argument Maps</title>
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Add Tailwind -->
+</head>
+<body class="p-6 bg-gray-100 text-gray-900">
+    <h1 class="text-3xl font-bold mb-4">Argument Maps</h1>
+    <ul class="space-y-2">
+        {% for map in maps %}
+            <li class="p-3 bg-white shadow-md rounded">
+                <a href="{% url 'view_argument_map' map.id %}" class="text-blue-600 hover:underline">
+                    {{ map.title }}
+                </a> 
+                <span class="text-gray-500">(Created by: {{ map.author.username }})</span>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

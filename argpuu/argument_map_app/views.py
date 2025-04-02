@@ -1,13 +1,20 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import generics
 from rest_framework.viewsets import ModelViewSet
-from .models import Argument, Operator, Connection
+from .models import ArgumentMap, Argument, Operator, Connection
 from .serializers.serializer import ArgumentSerializer
 
 
 
-def index(request):
-    return render(request, 'index.html')
+
+def view_argument_map(request, id):
+    argument_map = get_object_or_404(ArgumentMap, id=id)
+    return render(request, "view_argument_map.html", {"argument_map": argument_map})
+
+def list_argument_maps(request):
+    maps = ArgumentMap.objects.all()
+    return render(request, "list_argument_maps.html", {"maps": maps})
+
 
 from rest_framework import viewsets
 from rest_framework.response import Response

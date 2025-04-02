@@ -1,10 +1,16 @@
 from django.contrib import admin
-from .models import Argument, Operator, Connection
+from .models import ArgumentMap, Argument, Operator, Connection
+
+@admin.register(ArgumentMap)
+class ArgumentMapAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'author', 'created_at', 'updated_at')
+    list_filter = ('author', 'created_at')
+    search_fields = ('title',)
 
 @admin.register(Argument)
 class ArgumentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'content', 'is_topic', 'created_at', 'updated_at')
-    list_filter = ('is_topic', 'created_at')
+    list_display = ('id', 'content', 'is_root', 'created_at', 'updated_at')
+    list_filter = ('is_root', 'created_at')
     search_fields = ('content',)
 
 @admin.register(Operator)

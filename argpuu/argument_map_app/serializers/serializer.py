@@ -22,7 +22,7 @@ class ArgumentSerializer(serializers.ModelSerializer):
 
         data['data'] = {
             'content': instance.content,
-            'isTopic': instance.is_topic
+            'isTopic': instance.is_root
         }
         return data
 
@@ -32,7 +32,7 @@ class ArgumentSerializer(serializers.ModelSerializer):
 
         argument = Argument.objects.create(
             content=data_field.get('content', ''),
-            is_topic=data_field.get('isTopic', False),
+            is_root=data_field.get('isTopic', False),
             position_x=position_data.get('x', 0),
             position_y=position_data.get('y', 0)
         )
@@ -45,7 +45,7 @@ class ArgumentSerializer(serializers.ModelSerializer):
         instance.position_x = position_data.get('x', instance.position_x)
         instance.position_y = position_data.get('y', instance.position_y)
         instance.content = data_field.get('content', instance.content)
-        instance.is_topic = data_field.get('isTopic', instance.is_topic)
+        instance.is_root = data_field.get('isTopic', instance.is_root)
             
         instance.save()
         return instance

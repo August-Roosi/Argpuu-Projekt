@@ -33,8 +33,8 @@ export type AppState = {
     setEdges: (edges: Edge[]) => void;
     deleteNode: (nodeId: string) => void;
     updateNodeText: (nodeId: string, tekst: string) => void;
-    assignRootseisukoht: (nodeId: string) => void;
     createNode: (tekst: string, juur: boolean) => void;
+    getMapNodes: (id: string) => void;
 };
 
 
