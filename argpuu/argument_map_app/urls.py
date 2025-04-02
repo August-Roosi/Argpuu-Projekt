@@ -8,7 +8,10 @@ router = DefaultRouter()
 router.register(r'arguments', ArgumentViewSet)
 
 urlpatterns = [
-    path('', views.list_argument_maps, name="argument_map_list"),
+    path('', views.view_argument_map, name="view_argument_maps"),
+    path('view_argument_map/', views.view_argument_map, name='view_argument_maps'),  
     path('view_argument_map/<int:id>/', views.view_argument_map, name='view_argument_map'),  
+    path('view_argument_map/create/', views.create_argument_map, name='create_argument_map'),
+    
     path('api/', include(router.urls)),
 ]

@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 
 class ArgumentMap(models.Model):
     title = models.CharField(max_length=255)  
+    description = models.CharField(max_length=255, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="argument_trees")
-    root_argument = models.OneToOneField("Argument", on_delete=models.CASCADE, related_name="root_of_tree")
     contributors = models.ManyToManyField(User, related_name="collaborations", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  
     updated_at = models.DateTimeField(auto_now=True)  
@@ -17,20 +17,15 @@ class ArgumentMap(models.Model):
 
 class Argument(models.Model):
     content = models.TextField()
-    is_root = models.BooleanField(default=False)
+    argument_map = models.ManyToManyField(ArgumentMap, related_name="arguments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     position_x = models.FloatField(default=0)
     position_y = models.FloatField(default=0)
     
     def __str__(self):
-        return f"Argument (id: {self.id}, {'Root' if self.is_root else 'Regular'})"
+        return f"Argument (id: {self.id})"
     
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['id'], condition=models.Q(is_root=True), name="unique_root_per_map")
-        ]
-
 
 
 class Operator(models.Model):

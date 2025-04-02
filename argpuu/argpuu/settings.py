@@ -33,6 +33,7 @@ DEBUG = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = []
+LOGIN_URL = '/admin/login/'
 
 
 # Application definition
@@ -44,9 +45,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "argument_map_app",
+    "django_filters",
     'rest_framework',
     'corsheaders',
+    "argument_map_app",
     "utilities_app",
 
 ]
