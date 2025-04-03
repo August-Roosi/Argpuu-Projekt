@@ -46,3 +46,10 @@ class ArgumentSerializer(serializers.ModelSerializer):
             
         instance.save()
         return instance
+
+
+
+class ConnectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Connection
+        fields = '__all__'

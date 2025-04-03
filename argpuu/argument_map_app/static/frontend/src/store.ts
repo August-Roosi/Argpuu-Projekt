@@ -1,14 +1,11 @@
 import { create } from 'zustand';
-import { addEdge, applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
+import { addEdge, applyNodeChanges, applyEdgeChanges, Edge } from '@xyflow/react';
 import { type AppNode, type AppState, type ArgumentNode } from './nodes/types';
 import { getCSRFToken } from './utils/getCSRFToken';
 
-// Check if a node is of type 'text-updater'
-function isColorChooserNode(node: AppNode): node is ArgumentNode {
+function isTextUpdaterNode(node: AppNode): node is ArgumentNode {
   return node.type === 'text-updater';
 }
-
-
 
 
 const useStore = create<AppState>((set, get) => ({
@@ -21,26 +18,19 @@ const useStore = create<AppState>((set, get) => ({
   onNodesChange: (changes) => {
     set({
       nodes: applyNodeChanges(changes, get().nodes),
-    });
-    const updatedNodes = get().nodes;
-    const rootNode = updatedNodes.find((node) => {
-      return node.data && 'juur' in node.data && node.data.juur;
-    });
-    if (rootNode) {
-      console.log(rootNode.id)
-    }
-  },
+    });},
+
 
   onEdgesChange: (changes) => {
     set({
       edges: applyEdgeChanges(changes, get().edges),
-    });
-  },
+    });},
+
   onConnect: (connection) => {
     set({
       edges: addEdge(connection, get().edges),
-    });
-  },
+    });},
+    
   onConnectEnd: () => {},
   onConnectStart: () => {},
   setNodes: (nodes) => {
@@ -53,7 +43,7 @@ const useStore = create<AppState>((set, get) => ({
   updateNodeText: (nodeId: string, newText: string) => {
     set({
       nodes: get().nodes.map((node) => {
-        if (node.id === nodeId && isColorChooserNode(node)) {
+        if (node.id === nodeId && isTextUpdaterNode(node)) {
           return { ...node, data: { ...node.data, tekst: newText } };
         }
         return node;
@@ -87,38 +77,57 @@ const useStore = create<AppState>((set, get) => ({
     });
   },
   
-  getMapNodes: async (argumentMapId: string) => {
-    const getMapNodesRequest = async () => {
-      const csrfToken = getCSRFToken();
-      const response = await fetch(`/api/arguments/?argument_map=${argumentMapId}`, {
-        method: 'GET',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
+  getMap: async (argumentMapId: string) => {
+    const csrfToken = getCSRFToken();
+
+    const fetchData = async (endpoint: string) => {
+        const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: new Headers({
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken || '',
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
     };
-  
+
     try {
-      const response = await getMapNodesRequest();
-  
-      const nodes: ArgumentNode[] = response.map((node: any) => ({
-        ...node,
-        type: 'argument',
-      }));
-  
-      set({
-        nodes: [...get().nodes, ...nodes],
-      });
+        const argumentNodes = await fetchData(`/api/arguments/?argument_map=${argumentMapId}`);
+
+        if (argumentNodes.length === 0) {
+            console.warn("No arguments found for this map.");
+            return;
+        }
+
+        const argumentIds = argumentNodes.map((node: any) => node.id).join(',');
+
+        const argumentEdges = await fetchData(`/api/connections/?arguments=${argumentIds}`);
+
+        const nodes: ArgumentNode[] = argumentNodes.map((node: any) => ({
+            ...node,
+            type: 'argument',
+        }));
+        const edges: Edge[] = argumentEdges.map((edge: any) => ({
+            id: `${edge.id}`,
+            source: `${edge.input_argument}`,
+            target: `${edge.output_argument}`,
+            data: { operator: edge.operator, stance: edge.stance },
+        }));
+
+        set({
+            nodes: [...get().nodes, ...nodes],
+            edges: [...get().edges, ...edges],
+        });
+
     } catch (error) {
-      console.error('Error fetching argument map nodes:', error);
+        console.error('Error fetching argument map:', error);
     }
-  },
+},
+
   
 
   createNode: async (tekst: string, juur: boolean = false) => {

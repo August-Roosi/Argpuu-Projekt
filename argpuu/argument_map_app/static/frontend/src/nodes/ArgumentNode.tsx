@@ -93,7 +93,9 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
                 )}
             </div>
 
-            <Handle type="source" position={Position.Bottom} id="a" />
+            <Handle type="target" position={Position.Bottom} id="target" />
+            <Handle type="source" position={Position.Top} id="source" />
+
 
             {/* Popup debug box */}
             {isHovered && (

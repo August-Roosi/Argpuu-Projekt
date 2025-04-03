@@ -27,7 +27,7 @@ const selector = (state: AppState) => ({
   onEdgesChange: state.onEdgesChange,
   onConnect: state.onConnect,
   createNode: state.createNode,
-  getMapNodes: state.getMapNodes,
+  getMap: state.getMap,
 });
 
 
@@ -36,7 +36,7 @@ const selector = (state: AppState) => ({
 function Flow({ argumentMapId }: FlowProps) {
 
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMapNodes } = useStore(
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap } = useStore(
     useShallow(selector),
   );
 
@@ -45,12 +45,15 @@ function Flow({ argumentMapId }: FlowProps) {
     console.log("Flow component has mounted.");
     console.log("Argument Map ID:", argumentMapId);
     if (argumentMapId) {
-      getMapNodes(argumentMapId);
+      getMap(argumentMapId);
     }
   }, [argumentMapId]); 
   
 
-
+  const handleNodeClick = (_: React.MouseEvent, node: any) => {
+    console.log("Node clicked:", node);
+    console.log("Current edges:", edges);
+  };
 
 
   return (
@@ -64,8 +67,9 @@ function Flow({ argumentMapId }: FlowProps) {
       edges={edges}
       edgeTypes={edgeTypes}
       onEdgesChange={onEdgesChange}
-
+      onNodeClick={handleNodeClick}
       onConnect={onConnect}
+      defaultEdgeOptions={{ type: "smoothstep" }}
       fitView>
         <Background/>
         <Controls/>

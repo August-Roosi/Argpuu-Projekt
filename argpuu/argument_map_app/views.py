@@ -1,9 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .serializers.serializer import ArgumentSerializer
+from .serializers.serializer import ArgumentSerializer, ConnectionSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
 from rest_framework import viewsets
-from .models import Argument, ArgumentMap
+from .models import Argument, ArgumentMap, Connection
 from django.contrib.auth.decorators import login_required
+from rest_framework.response import Response
 
 
 @login_required
@@ -43,3 +45,24 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['argument_map']
 
+class ConnectionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Connection.objects.all()
+    serializer_class = ConnectionSerializer
+
+    def list(self, request, *args, **kwargs):
+        """
+        Allows filtering connections by argument IDs using a query parameter.
+        Example: /api/connections/?arguments=1,2,3
+        """
+        argument_ids = request.GET.get('arguments')
+        
+        if argument_ids:
+            argument_ids = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.isdigit()]
+            queryset = self.queryset.filter(
+                Q(input_argument__id__in=argument_ids) & Q(output_argument__id__in=argument_ids)
+            )
+        else:
+            queryset = self.queryset
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

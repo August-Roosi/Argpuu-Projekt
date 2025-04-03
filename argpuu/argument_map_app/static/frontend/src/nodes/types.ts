@@ -34,7 +34,7 @@ export type AppState = {
     deleteNode: (nodeId: string) => void;
     updateNodeText: (nodeId: string, tekst: string) => void;
     createNode: (tekst: string, juur: boolean) => void;
-    getMapNodes: (id: string) => void;
+    getMap: (id: string) => void;
 };
 
 
