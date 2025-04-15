@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from .models import Argument, ArgumentMap, Connection
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 
 @login_required
@@ -44,8 +45,24 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     serializer_class = ArgumentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['argument_map']
+    permission_classes = [IsAuthenticated]
 
-class ConnectionViewSet(viewsets.ReadOnlyModelViewSet):
+    def get_queryset(self):
+        return Argument.objects.filter(author=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        print("Request Data:", request.data)
+
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("Serializer Errors:", serializer.errors)
+            return Response(serializer.errors, status=400)
+
+        self.perform_create(serializer)
+        return Response(serializer.data, status=201)
+
+
+class ConnectionViewSet(viewsets.ModelViewSet):  
     queryset = Connection.objects.all()
     serializer_class = ConnectionSerializer
 
@@ -59,7 +76,7 @@ class ConnectionViewSet(viewsets.ReadOnlyModelViewSet):
         if argument_ids:
             argument_ids = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.isdigit()]
             queryset = self.queryset.filter(
-                Q(input_argument__id__in=argument_ids) & Q(output_argument__id__in=argument_ids)
+                Q(source_argument__id__in=argument_ids) & Q(target_argument__id__in=argument_ids)
             )
         else:
             queryset = self.queryset

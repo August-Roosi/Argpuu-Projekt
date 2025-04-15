@@ -16,15 +16,6 @@ body,
   margin: 0;
 }
 
-.text-updater-node {
-  height: 50px;
-  border: 1px solid #000000;
-  border-radius: 5px;
-  background: white;
-  width: fit-content;
-  height: fit-content;
-  padding: 0%;
-}
 
 .vastu {
   background: rgb(247, 177, 177);
@@ -34,27 +25,3 @@ body,
   background: rgb(183, 238, 152);
 }
 
-.text-updater-node label {
-  display: block;
-  color: #777;
-  font-size: 12px;
-  height: fit-content;
-  padding: 1em;
-  padding-left: 1em;
-  padding-right: 1em;
-  padding-bottom: 1em;
-  text-align: start;
-}
-.text-updater-node input {
-  height: 5em;
-  padding: 2%;
-  width: 100%;
-  display: block;
-  color: #777;
-  font-size: 12px;
-  height:inherit;
-  white-space: normal; /* Allow text to wrap */
-  word-wrap: break-word; /* Break long words if necessary */
-  overflow-wrap: break-word; /* Ensures compatibility with modern browsers */
-  
-}

@@ -1,55 +1,77 @@
 from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
 from ..models import Argument, Operator, Connection
-from rest_framework import serializers
+
 
 class ArgumentSerializer(serializers.ModelSerializer):
     position = serializers.SerializerMethodField()
-    data = serializers.JSONField(write_only=True)  # Accepts `data` field in input JSON
+    data = serializers.JSONField(write_only=True)
+    argument_map = serializers.PrimaryKeyRelatedField(
+        queryset=Argument.argument_map.rel.model.objects.all(),
+        many=True
+    )
 
     class Meta:
         model = Argument
-        fields = ['id', 'position', 'data']
+        fields = ['id', 'position', 'argument_map', 'data']
 
     def get_position(self, obj):
         return {'x': obj.position_x, 'y': obj.position_y}
 
     def to_representation(self, instance):
-        """Customize the output format"""
         data = super().to_representation(instance)
-
-        data['id'] = str(instance.id)  
-
-        data['data'] = {
-            'content': instance.content,
-        }
+        data['id'] = str(instance.id)
+        data['argument_map'] = [str(obj.id) for obj in instance.argument_map.all()]
+        data['data'] = {'content': instance.content}
         return data
 
-    def create(self):
+    def create(self, validated_data):
         position_data = self.initial_data.get('position', {})
         data_field = self.initial_data.get('data', {})
+        argument_map_ids = [obj.id if hasattr(obj, 'id') else obj for obj in validated_data.pop('argument_map', [])]
 
         argument = Argument.objects.create(
-            content=data_field.get('content', ''),
+            author=self.context['request'].user,
+            content=data_field.get('content'),
             position_x=position_data.get('x', 0),
-            position_y=position_data.get('y', 0)
+            position_y=position_data.get('y', 0),
         )
+        argument.argument_map.set(argument_map_ids)
         return argument
 
-    def update(self, instance):
+    def update(self, instance, validated_data):
         position_data = self.initial_data.get('position', {})
         data_field = self.initial_data.get('data', {})
 
         instance.position_x = position_data.get('x', instance.position_x)
         instance.position_y = position_data.get('y', instance.position_y)
         instance.content = data_field.get('content', instance.content)
-            
+
+        if 'argument_map' in validated_data:
+            argument_map_ids = validated_data.pop('argument_map')
+            instance.argument_map.set(argument_map_ids)
+
         instance.save()
         return instance
-
-
-
+    
+    
 class ConnectionSerializer(serializers.ModelSerializer):
+    source = serializers.PrimaryKeyRelatedField(
+        source='source_argument',
+        queryset=Argument.objects.all()
+    )
+    target = serializers.PrimaryKeyRelatedField(
+        source='target_argument',
+        queryset=Argument.objects.all()
+    )
+    explanation = serializers.CharField(required=False, allow_null=True)
+
     class Meta:
         model = Connection
-        fields = '__all__'
+        fields = ['id', 'source', 'target', 'explanation']
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = str(rep['id'])
+        rep['source'] = str(instance.source_argument.id)
+        rep['target'] = str(instance.target_argument.id)
+        return rep

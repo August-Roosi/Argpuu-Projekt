@@ -15,13 +15,14 @@ import { ArgumentNode } from './ArgumentNode';
 
 
 export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
-export type ArgumentNode = Node<{ content: string, isTopic: boolean }, 'text-updater'>;
+export type ArgumentNode = Node<{ content: string,  isTopic: boolean }, 'argument-node'>;
 
 
 
 export type AppNode = Node | BuiltInNode | ArgumentNode;
 
 export type AppState = {
+    argumentMapId: string;
     nodes: AppNode[];
     edges: Edge[];
     onNodesChange: OnNodesChange<AppNode>;
@@ -33,7 +34,8 @@ export type AppState = {
     setEdges: (edges: Edge[]) => void;
     deleteNode: (nodeId: string) => void;
     updateNodeText: (nodeId: string, tekst: string) => void;
-    createNode: (tekst: string, juur: boolean) => void;
+    createArgument: (parentNodeId: string, content: string) => void;
+    getArguments: (id?: string) => Promise<ArgumentNode[]>;
     getMap: (id: string) => void;
 };
 
@@ -42,6 +44,6 @@ export type AppState = {
 
 export const nodeTypes = {
     'position-logger': PositionLoggerNode,
-    'argument': ArgumentNode,
+    'argument-node': ArgumentNode,
 } satisfies NodeTypes;
 

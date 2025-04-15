@@ -1,8 +1,5 @@
 from django.db import models
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 
 
 class ArgumentMap(models.Model):
@@ -18,7 +15,9 @@ class ArgumentMap(models.Model):
 
 
 class Argument(models.Model):
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments")
+    contributors = models.ManyToManyField(User, related_name="argument_contributions", blank=True)
     argument_map = models.ManyToManyField(ArgumentMap, related_name="arguments")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -45,8 +44,8 @@ class Operator(models.Model):
 
 class Connection(models.Model):
     explanation = models.CharField(max_length=50, null=True)
-    input_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="input_connections")
-    output_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="output_connections")
+    source_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="source_connections")
+    target_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="target_connections")
     operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name="connections", null=True, blank=True)
 
     STANCE_CHOICES = [
@@ -66,14 +65,14 @@ class Connection(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(input_argument=models.F('output_argument')),
+                check=~models.Q(source_argument=models.F('target_argument')),
                 name='prevent_self_connection',
             )
         ]
 
 
     def __str__(self):
-        return f"Connection (Input ID: {self.input_argument.id}, Output ID: {self.output_argument.id}, Stance: {self.get_stance_display()})"
+        return f"Connection (Source ID: {self.source_argument.id}, Target ID: {self.target_argument.id}, Stance: {self.get_stance_display()})"
 
 
 class Log(models.Model):

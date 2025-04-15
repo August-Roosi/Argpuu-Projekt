@@ -6,7 +6,7 @@ from .views import ArgumentViewSet, ConnectionViewSet
 
 router = DefaultRouter()
 router.register(r'arguments', ArgumentViewSet)
-router.register(r'connections', ConnectionViewSet, basename='connection')
+router.register(r'connections', ConnectionViewSet)
 
 
 urlpatterns = [

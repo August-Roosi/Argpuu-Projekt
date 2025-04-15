@@ -1,103 +1,112 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState , useEffect} from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { type ArgumentNode, type AppState } from './types';
-import useStore from '../store';
+import useArgumentStore from '../stores/ArgumentStore';
+import { IoMdAdd } from "react-icons/io";
+import useModalStore from '../stores/ModalStore';
+
 
 export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
-    const { id , data } = node_state;
-    const { isTopic} = data
+    const { id, data } = node_state;
+    const { isTopic } = data;
 
-    const content: string = useStore((state: AppState) => {
+    const content: string = useArgumentStore((state: AppState) => {
         const node = state.nodes.find((node) => node.id === id);
         return node && 'content' in node.data ? node.data.content as string : "";
     });
-    const updateNodeText = useStore((state: AppState) => state.updateNodeText);
-    const deleteNode = useStore((state: AppState) => state.deleteNode);
 
-    // Track local state for the input text
+    const updateNodeText = useArgumentStore((state: AppState) => state.updateNodeText);
+    const deleteNode = useArgumentStore((state: AppState) => state.deleteNode);
+    
     const [sisendTekst, setSisendTekst] = useState(content);
     const [isEditable, setIsEditable] = useState(false);
-    const [showActions, setShowActions] = useState(false);
-    const [isHovered, setIsHovered] = useState(false); // Track hover state
+    const [isHovered, setIsHovered] = useState(false);
 
-    const onDoubleClick = useCallback(() => {
-        setShowActions(true); // Show action buttons on double-click
-    }, []);
 
+    const onCreate = useModalStore((state) => state.openModal);
     const onRename = useCallback(() => {
-        setIsEditable(true); // Enable editing for renaming
-        setShowActions(false); // Hide action buttons
+        setIsEditable(true);
     }, []);
-
-    const onCancel = useCallback(() => {
-        setShowActions(false); // Hide action buttons without making changes
-    }, []);
-
     const onDelete = useCallback(() => {
-        deleteNode(id); // Delete node when the user clicks "Delete"
+        deleteNode(id);
         console.log("Node deleted:", id);
     }, [deleteNode, id]);
 
     const onBlur = useCallback(() => {
-        setIsEditable(false); // Disable editing when input loses focus
-        setShowActions(false);
-        updateNodeText(id, sisendTekst); // Save the new tekst to the store
+        setIsEditable(false);
+        updateNodeText(id, sisendTekst);
     }, [updateNodeText, id, sisendTekst]);
 
     const onKeyDown = useCallback(
         (evt: React.KeyboardEvent<HTMLInputElement>) => {
             if (evt.key === "Enter") {
-                setIsEditable(false); // Exit editing mode on Enter
-                updateNodeText(id, sisendTekst); // Save the new tekst to the store when pressing Enter
-                console.log(sisendTekst);
+                updateNodeText(id, sisendTekst); 
+                setIsEditable(false);
+                evt.preventDefault(); 
             }
         },
         [updateNodeText, id, sisendTekst]
     );
 
     const onChange = useCallback((evt: React.ChangeEvent<HTMLInputElement>) => {
-        setSisendTekst(evt.target.value); // Update the tekst in the local state as the user types
+        setSisendTekst(evt.target.value);
     }, []);
+
+    useEffect(() => {
+        // If any specific logic or fetch is needed, you can handle it here.
+    }, [id]);
 
     return (
         <div
-            className="text-updater-node react-flow__node-default"
-            onMouseEnter={() => setIsHovered(true)}  // Show popup on hover
-            onMouseLeave={() => setIsHovered(false)} // Hide popup when mouse leaves
-        >
-            <div>
+            className="text-updater-node relative react-flow__node-default flex flex-col rounded-md! shadow-lg bg-gray-100 text-gray-800 shadow-gray-800" 
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >   
+
+            <div className='flex flex-row gap-x-2 justify-end'>
+                <button className='bg-yellow-400 rounded-xl w-2 h-2' onClick={onRename}></button>
+                <button className='bg-green-400 rounded-xl w-2 h-2' onClick={() => onCreate(id)}>
+                    <IoMdAdd className='hover:visible invisible text-[0.5rem]'/>
+                </button>
+                <button className='bg-red-400 rounded-xl w-2 h-2' onClick={onDelete}></button>
+            </div>
+
+            <div className=''>
                 {isEditable ? (
                     <input
                         id="text"
                         name="text"
                         value={sisendTekst}
                         onChange={onChange}
-                        onKeyDown={onKeyDown}
+                        onKeyDown={onKeyDown}                        
                         onBlur={onBlur}
                         className="nodrag"
                         autoFocus
                         size={Math.max(content.length, 10)}
                     />
                 ) : (
-                    <label htmlFor="text" onDoubleClick={onDoubleClick}>
+                    <label htmlFor="text">
                         {content || "Double-click to edit"}
                     </label>
                 )}
 
-                {showActions && !isEditable && (
-                    <div onBlur={onBlur} className="actions">
-                        <button onClick={onRename} className="nodrag">Rename</button>
-                        <button onClick={onCancel} className="nodrag">Cancel</button>
-                        <button onClick={onDelete} className="nodrag">Delete</button>
-                    </div>
-                )}
+  
             </div>
 
-            <Handle type="target" position={Position.Bottom} id="target" />
-            <Handle type="source" position={Position.Top} id="source" />
 
+            <Handle type="target" className='invisible' position={Position.Top} id="target"/>
 
-            {/* Popup debug box */}
+            <div className="relative">
+                <Handle
+                    type="source"
+                    className='p-2 invisible rounded-lg bg-green-400 border-gray-800 hover:bg-green-200'
+                    position={Position.Bottom}
+                    id="source"
+                />
+            </div>
+
+      
+
             {isHovered && (
                 <div className="absolute top-0 left-full ml-2 p-2 bg-gray-800 text-white rounded-md shadow-lg flex flex-wrap w-40 gap-x-2">
                     <p><strong>Tipu ID:</strong> {id}</p>

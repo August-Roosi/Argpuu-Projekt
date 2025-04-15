@@ -21,6 +21,6 @@ class OperatorAdmin(admin.ModelAdmin):
 
 @admin.register(Connection)
 class ConnectionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'input_argument', 'output_argument', 'operator', 'stance', 'created_at', 'updated_at')
+    list_display = ('id', 'source_argument', 'target_argument', 'operator', 'stance', 'created_at', 'updated_at')
     list_filter = ('operator', 'stance', 'created_at')
-    search_fields = ('input_argument__content', 'output_argument__content')
+    search_fields = ('source_argument__content', 'target_argument__content')
