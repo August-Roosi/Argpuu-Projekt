@@ -9,9 +9,11 @@
     <link rel="stylesheet" href="{% static 'assets/index.css' %}">
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+    </div>
 
     <script>
+        window.argumentMapsViewUrl = "{% url 'view_argument_maps' %}";
         window.argumentMapId = "{{ argument_map.id }}";
     </script>
 

@@ -38,6 +38,13 @@ def create_argument_map(request):
     
     return redirect('view_argument_maps')
 
+@login_required
+def delete_argument_map(request, id):
+    if request.method == "POST":
+        argument_map = get_object_or_404(ArgumentMap, id=id)
+        if argument_map.author == request.user:  
+            argument_map.delete()
+    return redirect('view_argument_maps') 
 
 
 class ArgumentViewSet(viewsets.ModelViewSet):

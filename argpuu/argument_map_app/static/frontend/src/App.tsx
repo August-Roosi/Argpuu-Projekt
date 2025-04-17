@@ -14,9 +14,12 @@ import useArgumentStore from './stores/ArgumentStore';
 import { useShallow } from 'zustand/react/shallow';
 import useModalStore from './stores/ModalStore';
 import useSearchStore from './stores/SearchStore';
+import Titlebar from './components/Titlebar';
+
 
 interface FlowProps {
   argumentMapId: string;
+  argumentMapsViewUrl: string;
 }
 
 
@@ -35,7 +38,7 @@ const selector = (state: AppState) => ({
 
 
 
-function Flow({ argumentMapId }: FlowProps) {
+function Flow({ argumentMapId, argumentMapsViewUrl }: FlowProps) {
 
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection } = useArgumentStore(useShallow(selector),);
@@ -69,7 +72,6 @@ function Flow({ argumentMapId }: FlowProps) {
 
   return (
     <div style={{ height: '100%' }}>
-  
       <ReactFlow 
       nodes={nodes}
       nodeTypes={nodeTypes}
@@ -82,6 +84,8 @@ function Flow({ argumentMapId }: FlowProps) {
       onConnect={onConnect}
       defaultEdgeOptions={{ type: "smoothstep" }}
       fitView>
+        <Titlebar title="test" targetUrl={argumentMapsViewUrl}/>
+
         <Background/>
         <Controls/>
 
