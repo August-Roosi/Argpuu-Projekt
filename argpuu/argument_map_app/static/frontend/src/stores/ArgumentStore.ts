@@ -61,7 +61,9 @@ const useArgumentStore = create<AppState>((set, get) => ({
           'X-CSRFToken': csrfToken || '',
         }),
         body: JSON.stringify({
-          content: newText,
+          data: {
+            content: newText,
+          },
         }),
       });
 
