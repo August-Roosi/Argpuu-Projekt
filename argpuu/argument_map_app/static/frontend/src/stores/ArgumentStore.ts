@@ -128,8 +128,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
       }
 
       const argumentIds = argumentNodes.map((node: any) => node.id).join(',');
-
-      const argumentEdges = await fetchData(`/api/connections/?arguments=${argumentIds}`);
+      const argumentEdges = await fetchData(`/api/connections/?arguments=${argumentIds}&argument_map=${argumentMapId}`);
 
       const nodes: ArgumentNode[] = argumentNodes.map((node: any) => ({
         ...node,
@@ -142,7 +141,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
         data: { operator: edge.operator, stance: edge.stance },
       }));
 
-      // Apply Dagre layout here using the utility function
       const positionedNodes = applyDagreLayout(nodes, edges);
 
       set({
@@ -156,13 +154,36 @@ const useArgumentStore = create<AppState>((set, get) => ({
     }
   },
 
-  createArgument: async (parentNodeId: string, content: string) => {
-    console.log("Parent node ID:", parentNodeId);
 
+
+  createArgumentWithConnection: async (parentArgumentId: string, content: string): Promise<boolean> => {
+    console.log("Parent node ID:", parentArgumentId);
+    
+    const newNode = await get().createArgument(content);
+    if (!newNode) return false;
+  
+    const newEdge = await get().connectArguments(parentArgumentId, newNode.id);
+    if (!newEdge) return false;
+  
+    const positionedNodes = applyDagreLayout(
+      [...get().nodes, newNode],
+      [...get().edges, newEdge]
+    );
+  
+    set({
+      nodes: positionedNodes,
+      edges: [...get().edges, newEdge],
+    });
+  
+    console.log("Node and edge created successfully.");
+    return true;
+  },
+  
+
+  createArgument: async (content: string): Promise<ArgumentNode | null> => {
     const csrfToken = getCSRFToken();
-
+  
     try {
-      // Step 1: Create the argument node
       const nodeResponse = await fetch('/api/arguments/', {
         method: 'POST',
         headers: {
@@ -175,21 +196,78 @@ const useArgumentStore = create<AppState>((set, get) => ({
           data: { content },
         }),
       });
-
+  
       if (!nodeResponse.ok) {
         throw new Error(`Node creation failed: ${nodeResponse.status}`);
       }
-
+  
+      const nodeData = await nodeResponse.json();
+  
       const newNode: ArgumentNode = {
-        ...(await nodeResponse.json()),
+        ...nodeData,
         type: "argument-node",
         data: {
           content: content,
-          isTopic: false, // Ensure these properties are explicitly defined
+          isTopic: false,
         },
       };
+  
+      return newNode;
+    } catch (err) {
+      console.error("Error creating node:", err);
+      return null;
+    }
+  },
 
-      // Step 2: Create the edge (connection)
+  connectArguments: async (sourceId: string, targetId: string) => {
+    const csrfToken = getCSRFToken();
+    const argumentMapId = get().argumentMapId;
+  
+    const ensureNodeInMap = async (nodeId: string) => {
+      const nodeExists = get().nodes.some((node) => node.id === nodeId);
+
+      if (!nodeExists) {
+        try {
+          const [fetchedNode] = await get().getArguments(nodeId);
+      
+          if (!fetchedNode) {
+            console.warn(`Node ${nodeId} not found in backend`);
+            return;
+          }
+      
+          const updatedMapIds = [
+            ...(fetchedNode.data.argument_map || []),
+            argumentMapId,
+          ];
+      
+          const csrfToken = getCSRFToken();
+          const response = await fetch(`/api/arguments/${nodeId}/`, {
+            method: 'PATCH',
+            headers: new Headers({
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken || '',
+            }),
+            body: JSON.stringify({
+              argument_map: updatedMapIds,
+            }),
+          });
+      
+          if (!response.ok) {
+            console.warn(`Could not append map ID to node ${nodeId}:`, response.status);
+          } else {
+            console.log(`Map ID appended to node ${nodeId} successfully.`);
+          }
+        } catch (err) {
+          console.error(`Failed to patch node ${nodeId}:`, err);
+        }
+      }
+      
+    };
+  
+    await ensureNodeInMap(sourceId);
+    await ensureNodeInMap(targetId);
+    console.log("Argument map ID:!", argumentMapId);
+    try {
       const edgeResponse = await fetch('/api/connections/', {
         method: 'POST',
         headers: {
@@ -197,32 +275,25 @@ const useArgumentStore = create<AppState>((set, get) => ({
           'X-CSRFToken': csrfToken || '',
         },
         body: JSON.stringify({
-          source: parentNodeId,
-          target: newNode.id,
+          argument_map: argumentMapId,
+          source: sourceId,
+          target: targetId,
         }),
       });
-
+  
       if (!edgeResponse.ok) {
         throw new Error(`Edge creation failed: ${edgeResponse.status}`);
       }
-
+  
       const newEdge = await edgeResponse.json();
-
-      const positionedNodes = applyDagreLayout(
-        [...get().nodes, newNode],
-        [...get().edges, newEdge]
-      );
-
-      set({
-        nodes: positionedNodes,
-        edges: [...get().edges, newEdge],
-      });
-
-      console.log("Node and edge created successfully.");
+      return newEdge;
     } catch (err) {
-      console.error("Error creating node and edge:", err);
+      console.error("Error creating edge:", err);
+      return null;
     }
   },
+  
+
 
   getArguments: async (id?: string): Promise<ArgumentNode[]> => {
     const csrfToken = getCSRFToken();
@@ -244,7 +315,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
       const data = await response.json();
 
-      // If a single argument was fetched, wrap it in an array for consistency
       const argumentArray = Array.isArray(data) ? data : [data];
 
       const nodes: ArgumentNode[] = argumentArray.map((node: any) => ({

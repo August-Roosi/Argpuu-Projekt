@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Argument, Operator, Connection
+from ..models import Argument, ArgumentMap, Operator, Connection
 
 
 class ArgumentSerializer(serializers.ModelSerializer):
@@ -20,8 +20,7 @@ class ArgumentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['id'] = str(instance.id)
-        data['argument_map'] = [str(obj.id) for obj in instance.argument_map.all()]
-        data['data'] = {'content': instance.content}
+        data['data'] = {'content': instance.content, 'argument_map': [str(obj.id) for obj in instance.argument_map.all()]}
         return data
 
     def create(self, validated_data):
@@ -53,8 +52,10 @@ class ArgumentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
-    
 class ConnectionSerializer(serializers.ModelSerializer):
+    argument_map = serializers.PrimaryKeyRelatedField(
+        queryset=ArgumentMap.objects.all()
+    )
     source = serializers.PrimaryKeyRelatedField(
         source='source_argument',
         queryset=Argument.objects.all()
@@ -67,7 +68,7 @@ class ConnectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Connection
-        fields = ['id', 'source', 'target', 'explanation']
+        fields = ['id', 'source', 'target', 'explanation', 'argument_map']
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -75,3 +76,9 @@ class ConnectionSerializer(serializers.ModelSerializer):
         rep['source'] = str(instance.source_argument.id)
         rep['target'] = str(instance.target_argument.id)
         return rep
+
+    def create(self, validated_data):
+        return Connection.objects.create(
+            author=self.context['request'].user,
+            **validated_data
+        )

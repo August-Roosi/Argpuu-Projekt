@@ -15,12 +15,11 @@ import { ArgumentNode } from './ArgumentNode';
 
 
 export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
-export type ArgumentNode = Node<{ content: string,  isTopic: boolean }, 'argument-node'>;
+export type ArgumentNode = Node<{ content: string,  isTopic: boolean, argument_map: string[] }, 'argument-node'>;
 
 
 
 export type AppNode = Node | BuiltInNode | ArgumentNode;
-
 export type AppState = {
     argumentMapId: string;
     nodes: AppNode[];
@@ -34,11 +33,12 @@ export type AppState = {
     setEdges: (edges: Edge[]) => void;
     deleteNode: (nodeId: string) => void;
     updateNodeText: (nodeId: string, tekst: string) => void;
-    createArgument: (parentNodeId: string, content: string) => void;
+    createArgument: (content: string) => Promise<ArgumentNode | null>;
+    connectArguments: (sourceId: string, targetId: string) => Promise<Edge | null>;
+    createArgumentWithConnection: (parentNodeId: string, content: string) => Promise<boolean>;
     getArguments: (id?: string) => Promise<ArgumentNode[]>;
     getMap: (id: string) => void;
 };
-
 
 
 

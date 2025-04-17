@@ -43,10 +43,12 @@ class Operator(models.Model):
 
 
 class Connection(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="connections")
     explanation = models.CharField(max_length=50, null=True)
+    argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="connections")
     source_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="source_connections")
     target_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="target_connections")
-    operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name="connections", null=True, blank=True)
+    operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name="operators", null=True, blank=True)
 
     STANCE_CHOICES = [
         ('against', 'Against'),

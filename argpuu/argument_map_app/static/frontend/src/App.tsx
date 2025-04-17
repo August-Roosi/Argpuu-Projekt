@@ -28,7 +28,8 @@ const selector = (state: AppState) => ({
   onConnect: state.onConnect,
   createArgument: state.createArgument,
   getMap: state.getMap,
-  getArguments: state.getArguments,
+  connectArguments: state.connectArguments,
+  createArgumentWithConnection: state.createArgumentWithConnection,
 });
 
 
@@ -37,14 +38,13 @@ const selector = (state: AppState) => ({
 function Flow({ argumentMapId }: FlowProps) {
 
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, getArguments } = useArgumentStore(useShallow(selector),);
-  const { isOpen, nodeId, closeModal } = useModalStore();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection } = useArgumentStore(useShallow(selector),);
+  const { isOpen, nodeId: parentArgumentId, closeModal } = useModalStore();
   const { searchTerm,
     setSearchTerm,
     filteredArguments,
     getArgumentsFromApi,
     loadingArguments,
-    selectedArgument,
   } = useSearchStore();
 
 
@@ -55,7 +55,7 @@ function Flow({ argumentMapId }: FlowProps) {
       getMap(argumentMapId);
     }
     if (isOpen) {
-      getArgumentsFromApi();
+      getArgumentsFromApi(argumentMapId);
     }
   }, [argumentMapId, isOpen, getArgumentsFromApi]); 
   
@@ -65,7 +65,7 @@ function Flow({ argumentMapId }: FlowProps) {
     console.log("Current edges:", edges);
   };
 
-  const results = filteredArguments(nodeId ?? "");
+  const results = filteredArguments(parentArgumentId ?? "");
 
   return (
     <div style={{ height: '100%' }}>
@@ -99,11 +99,22 @@ function Flow({ argumentMapId }: FlowProps) {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={async (e) => {
+                if (parentArgumentId && e.key === "Enter") {
+                  const result = await createArgumentWithConnection(parentArgumentId, searchTerm);
+                  if (result) {
+                    closeModal();
+                  } 
+                } else {
+                    
+                  console.error("Parent argument ID is null.");
+                }
+              }}
               placeholder="Search here..."
               className="w-full border p-2 rounded mb-4"
             />
 
-            <p className="text-sm text-gray-500 mb-2">Opened for node ID: {nodeId}</p>
+            <p className="text-sm text-gray-500 mb-2">Opened for node ID: {parentArgumentId}</p>
 
             {loadingArguments ? (
               <p className="text-gray-600">Loading arguments...</p>
@@ -111,16 +122,25 @@ function Flow({ argumentMapId }: FlowProps) {
               <p className="text-gray-600">No arguments found.</p>
             ) : (
               <ul className="space-y-2">
-                {results.map((arg) => (
+                {results.map((selectedArgument) => (
                   <li
-                    key={arg.id}
+                    key={selectedArgument.id}
                     className={`p-3 border rounded hover:bg-gray-100 cursor-pointer ${
-                      selectedArgument?.id === arg.id ? 'bg-blue-100 border-blue-400' : ''
+                      selectedArgument?.id === selectedArgument.id ? 'bg-blue-100 border-blue-400' : ''
                     }`}
-                    onClick={() => getArguments(arg.id)}
+                    onClick={async () => {
+                      if (parentArgumentId) {
+                        const result = await connectArguments(parentArgumentId, selectedArgument.id);
+                        if (result) {
+                          closeModal();
+                        } else {
+                          console.error("Failed to connect arguments");
+                        }
+                      }
+                    }}
                   >
-                    <p className="font-medium">{arg.data.content}</p>
-                    <p className="text-sm text-gray-500">ID: {arg.id}</p>
+                    <p className="font-medium">{selectedArgument.data.content}</p>
+                    <p className="text-sm text-gray-500">ID: {selectedArgument.id}</p>
                   </li>
                 ))}
               </ul>

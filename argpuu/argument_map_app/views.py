@@ -47,11 +47,9 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['argument_map']
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return Argument.objects.filter(author=self.request.user)
+
 
     def create(self, request, *args, **kwargs):
-        print("Request Data:", request.data)
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -60,26 +58,38 @@ class ArgumentViewSet(viewsets.ModelViewSet):
 
         self.perform_create(serializer)
         return Response(serializer.data, status=201)
+    
+    def get_queryset(self):
+        queryset = Argument.objects.filter(author=self.request.user)
+        exclude_map_id = self.request.query_params.get('exclude_argument_map')
+
+        if exclude_map_id and exclude_map_id.isdigit():
+            queryset = queryset.exclude(argument_map__id=exclude_map_id)
+
+        return queryset
 
 
 class ConnectionViewSet(viewsets.ModelViewSet):  
     queryset = Connection.objects.all()
     serializer_class = ConnectionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['argument_map', 'source_argument', 'target_argument']
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        """
-        Allows filtering connections by argument IDs using a query parameter.
-        Example: /api/connections/?arguments=1,2,3
-        """
         argument_ids = request.GET.get('arguments')
-        
+        argument_map_id = request.GET.get('argument_map')
+
+        queryset = self.queryset
+
         if argument_ids:
             argument_ids = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.isdigit()]
-            queryset = self.queryset.filter(
-                Q(source_argument__id__in=argument_ids) & Q(target_argument__id__in=argument_ids)
+            queryset = queryset.filter(
+                Q(source_argument__id__in=argument_ids) &
+                Q(target_argument__id__in=argument_ids)
             )
-        else:
-            queryset = self.queryset
+        if argument_map_id and argument_map_id.isdigit():
+            queryset = queryset.filter(argument_map=argument_map_id)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

@@ -3,6 +3,7 @@ import { type ArgumentNode } from '../nodes/types';
 import { getCSRFToken } from '../utils/getCSRFToken';
 
 interface SearchState {
+    
     searchTerm: string;
     setSearchTerm: (term: string) => void;
     selectedArgument: ArgumentNode | null;
@@ -12,7 +13,7 @@ interface SearchState {
     loadingArguments: boolean;
     setLoadingArguments: (loading: boolean) => void;
     filteredArguments: (currentNodeId: string) => ArgumentNode[];
-    getArgumentsFromApi: () => Promise<void>;
+    getArgumentsFromApi: (argumentMapId: string) => Promise<void>;
 }
 
 const useSearchStore = create<SearchState>((set, get) => ({
@@ -46,12 +47,12 @@ const useSearchStore = create<SearchState>((set, get) => ({
             );
         }),
 
-    getArgumentsFromApi: async () => {
+    getArgumentsFromApi: async (argumentMapId:string) => {
         const csrfToken = getCSRFToken();
         set({ loadingArguments: true });
 
         try {
-            const response = await fetch('/api/arguments/', {
+            const response = await fetch(`/api/arguments/?exclude_argument_map=${argumentMapId}`, {
                 method: 'GET',
                 headers: new Headers({
                     'Content-Type': 'application/json',
