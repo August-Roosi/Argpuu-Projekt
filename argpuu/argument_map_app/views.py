@@ -67,11 +67,24 @@ class ArgumentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=201)
     
     def get_queryset(self):
-        queryset = Argument.objects.filter(author=self.request.user)
-        exclude_map_id = self.request.query_params.get('exclude_argument_map')
+        print("User:", self.request.user)
+        print("Query Params:", self.request.query_params)
+        print("Request Data:", self.request.data)
 
+        queryset = Argument.objects.filter(author=self.request.user)
+
+        exclude_map_id = self.request.query_params.get('exclude_argument_map')
         if exclude_map_id and exclude_map_id.isdigit():
             queryset = queryset.exclude(argument_map__id=exclude_map_id)
+
+        argument_ids = self.request.query_params.get('ids')
+        if argument_ids:
+            try:
+                print("priivin")
+                id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
+                queryset = queryset.filter(id__in=id_list)
+            except ValueError:
+                pass  
 
         return queryset
 
@@ -82,6 +95,10 @@ class ConnectionViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['argument_map', 'source_argument', 'target_argument']
     permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        print("ConnectionViewSet queryset:", self.request.data)
+        return super().get_queryset()
 
     def list(self, request, *args, **kwargs):
         argument_ids = request.GET.get('arguments')

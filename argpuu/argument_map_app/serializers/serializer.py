@@ -53,32 +53,50 @@ class ArgumentSerializer(serializers.ModelSerializer):
         return instance
     
 class ConnectionSerializer(serializers.ModelSerializer):
-    argument_map = serializers.PrimaryKeyRelatedField(
-        queryset=ArgumentMap.objects.all()
-    )
-    source = serializers.PrimaryKeyRelatedField(
-        source='source_argument',
-        queryset=Argument.objects.all()
-    )
-    target = serializers.PrimaryKeyRelatedField(
-        source='target_argument',
-        queryset=Argument.objects.all()
-    )
-    explanation = serializers.CharField(required=False, allow_null=True)
-
+    argument_map = serializers.PrimaryKeyRelatedField(queryset=ArgumentMap.objects.all())
+    source = serializers.PrimaryKeyRelatedField(source='source_argument', queryset=Argument.objects.all())
+    target = serializers.PrimaryKeyRelatedField(source='target_argument', queryset=Argument.objects.all())
+    data = serializers.JSONField(write_only=True)
+    
     class Meta:
         model = Connection
-        fields = ['id', 'source', 'target', 'explanation', 'argument_map']
+        fields = ['id', 'source', 'target', 'argument_map', 'data']
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['id'] = str(rep['id'])
         rep['source'] = str(instance.source_argument.id)
         rep['target'] = str(instance.target_argument.id)
+        rep['data'] = {'stance': instance.stance, 'explanation': instance.explanation}
         return rep
 
     def create(self, validated_data):
+        data = validated_data.pop('data', {}) 
+
+        stance = data.get('stance', 'undefined') 
+        explanation = data.get('explanation', '')
+        
+
         return Connection.objects.create(
             author=self.context['request'].user,
+            stance=stance,
+            explanation=explanation,
             **validated_data
         )
+
+        
+    def update(self, instance, validated_data):
+        data = validated_data.get('data', {})
+        instance.stance = data.get('stance', instance.stance)
+        instance.explanation = data.get('explanation', instance.explanation)
+
+        if 'source_argument' in validated_data:
+            instance.source_argument = validated_data['source_argument']
+
+        if 'target_argument' in validated_data:
+            instance.target_argument = validated_data['target_argument']
+
+        instance.save()
+        return instance
+
+

@@ -4,6 +4,7 @@ import {
   Background,
 } from '@xyflow/react';
 import { useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 
 
 import '@xyflow/react/dist/style.css';
@@ -16,11 +17,10 @@ import useModalStore from './stores/ModalStore';
 import useSearchStore from './stores/SearchStore';
 import Titlebar from './components/Titlebar';
 
-
-interface FlowProps {
-  argumentMapId: string;
-  argumentMapsViewUrl: string;
-}
+const argumentMapId = window.argumentMapId;
+const argumentMapsViewUrl = window.argumentMapsViewUrl;
+const argumentMapTitle = window.argumentMapTitle;
+const argumentMapAuthor = window.argumentMapAuthor;
 
 
 const selector = (state: AppState) => ({
@@ -38,7 +38,7 @@ const selector = (state: AppState) => ({
 
 
 
-function Flow({ argumentMapId, argumentMapsViewUrl }: FlowProps) {
+function Flow() {
 
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection } = useArgumentStore(useShallow(selector),);
@@ -60,8 +60,8 @@ function Flow({ argumentMapId, argumentMapsViewUrl }: FlowProps) {
     if (isOpen) {
       getArgumentsFromApi(argumentMapId);
     }
-  }, [argumentMapId, isOpen, getArgumentsFromApi]); 
-  
+  }, [argumentMapId, isOpen, getArgumentsFromApi]);
+
 
   const handleNodeClick = (_: React.MouseEvent, node: any) => {
     console.log("Node clicked:", node);
@@ -71,87 +71,102 @@ function Flow({ argumentMapId, argumentMapsViewUrl }: FlowProps) {
   const results = filteredArguments(parentArgumentId ?? "");
 
   return (
-    <div style={{ height: '100%' }}>
-      <ReactFlow 
-      nodes={nodes}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
+    <div style={{ height: '100%' }} className='bg-gray-700 bg-sky-50'>
+      <Toaster position="top-center" reverseOrder={false} />
 
-      edges={edges}
-      edgeTypes={edgeTypes}
-      onEdgesChange={onEdgesChange}
-      onNodeClick={handleNodeClick}
-      onConnect={onConnect}
-      defaultEdgeOptions={{ type: "smoothstep" }}
-      fitView>
-        <Titlebar title="test" targetUrl={argumentMapsViewUrl}/>
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        edges={edges}
+        edgeTypes={edgeTypes}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={handleNodeClick}
+        onConnect={onConnect}
+        defaultEdgeOptions={{ type: "smoothstep" }}
+        fitView
+        fitViewOptions={{ padding: 0.3 }}
+      >
+        <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} />
 
-        <Background/>
-        <Controls/>
+        <Background />
+        <Controls />
 
         {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Search Arguments</h2>
-              <button onClick={closeModal} className="text-red-500 text-xl font-bold">
-                &times;
-              </button>
-            </div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Otsi argumente või tee uus..</h2>
+                <button className='px-1' onClick={closeModal}>
+                  <div className='bg-red-400 rounded-xl w-4 h-4 hover:bg-red-200 focus:bg-red-600'></div>
+                </button>
+              </div>
 
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={async (e) => {
-                if (parentArgumentId && e.key === "Enter") {
-                  const result = await createArgumentWithConnection(parentArgumentId, searchTerm);
-                  if (result) {
+              <input
+                type="text"
+                autoFocus
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={async (e) => {
+
+                  if (e.key === "Enter") {
+                    if (searchTerm.length > 1000) {
+                      toast.error("Argumendi tekst on liiga pikk!");
+                      return;
+                    }
+                    if (!parentArgumentId) {
+                      toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
+                      return;
+                    }
+                    const result = await createArgumentWithConnection(parentArgumentId, searchTerm);
+                    if (!result) {
+                      toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
+                      return;
+                    }
                     closeModal();
-                  } 
-                } else {
-                    
-                  console.error("Parent argument ID is null.");
-                }
-              }}
-              placeholder="Search here..."
-              className="w-full border p-2 rounded mb-4"
-            />
+                    toast.success("Argument loodud!");
+                  }
 
-            <p className="text-sm text-gray-500 mb-2">Opened for node ID: {parentArgumentId}</p>
+                }}
+                placeholder="Search here..."
+                className="w-full border p-2 rounded mb-4"
+              />
 
-            {loadingArguments ? (
-              <p className="text-gray-600">Loading arguments...</p>
-            ) : results.length === 0 ? (
-              <p className="text-gray-600">No arguments found.</p>
-            ) : (
-              <ul className="space-y-2">
-                {results.map((selectedArgument) => (
-                  <li
-                    key={selectedArgument.id}
-                    className={`p-3 border rounded hover:bg-gray-100 cursor-pointer ${
-                      selectedArgument?.id === selectedArgument.id ? 'bg-blue-100 border-blue-400' : ''
-                    }`}
-                    onClick={async () => {
-                      if (parentArgumentId) {
-                        const result = await connectArguments(parentArgumentId, selectedArgument.id);
-                        if (result) {
-                          closeModal();
-                        } else {
-                          console.error("Failed to connect arguments");
+              {loadingArguments ? (
+                <p className="text-gray-600">Laen argumente..</p>
+              ) : results.length === 0 ? (
+                <p className="text-gray-600">Argumente ei leitud.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {results.map((selectedArgument) => (
+                    <li
+                      key={selectedArgument.id}
+                      className={`p-3 border rounded hover:bg-gray-100 cursor-pointer ${selectedArgument?.id === selectedArgument.id ? 'bg-blue-100 border-blue-400' : ''
+                        }`}
+                      onClick={async () => {
+                        if (!parentArgumentId) {
+                          toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
+                          return;
                         }
-                      }
-                    }}
-                  >
-                    <p className="font-medium">{selectedArgument.data.content}</p>
-                    <p className="text-sm text-gray-500">ID: {selectedArgument.id}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
+                        const result = await connectArguments(parentArgumentId, selectedArgument.id);
+                        if (!result) {
+                          toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
+                          return;
+                        }
+                        closeModal();
+                        toast.success("Argument kopeeritud teisest kaardist!");
+
+                      }}
+                    >
+                      <p className="font-medium">{selectedArgument.data.content}</p>
+                      <p className="text-sm text-gray-500">ID: {selectedArgument.id}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </ReactFlow>
 
 

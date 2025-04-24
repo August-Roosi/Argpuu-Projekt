@@ -15,7 +15,7 @@ class ArgumentMap(models.Model):
 
 
 class Argument(models.Model):
-    content = models.TextField(blank=True, null=True)
+    content = models.CharField(blank=True, null=True, max_length=1000)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments")
     contributors = models.ManyToManyField(User, related_name="argument_contributions", blank=True)
     argument_map = models.ManyToManyField(ArgumentMap, related_name="arguments")

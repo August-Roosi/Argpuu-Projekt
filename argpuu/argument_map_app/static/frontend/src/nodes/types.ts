@@ -15,29 +15,30 @@ import { ArgumentNode } from './ArgumentNode';
 
 
 export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
-export type ArgumentNode = Node<{ content: string,  isTopic: boolean, argument_map: string[] }, 'argument-node'>;
+export type ArgumentNode = Node<{ content: string, stance: 'for'|'against'|'undefined',  isTopic: boolean, argument_map: string[],  }, 'argument-node'>;
 
 
 
 export type AppNode = Node | BuiltInNode | ArgumentNode;
 export type AppState = {
     argumentMapId: string;
-    nodes: AppNode[];
+    nodes: ArgumentNode[];
     edges: Edge[];
-    onNodesChange: OnNodesChange<AppNode>;
+    onNodesChange: OnNodesChange<ArgumentNode>;
     onEdgesChange: OnEdgesChange;
     onConnect: OnConnect;
     onConnectEnd: OnConnectEnd;
     onConnectStart: OnConnectStart;
-    setNodes: (nodes: AppNode[]) => void;
+    setNodes: (nodes: ArgumentNode[]) => void;
     setEdges: (edges: Edge[]) => void;
-    deleteNode: (nodeId: string) => void;
-    updateNodeText: (nodeId: string, tekst: string) => void;
+    deleteNode: (nodeId: string) => Promise<[0 | 1, string]>;
+    updateNodeContent: (nodeId: string, tekst: string) => Promise<[0 | 1, string]>;
     createArgument: (content: string) => Promise<ArgumentNode | null>;
     connectArguments: (sourceId: string, targetId: string) => Promise<Edge | null>;
     createArgumentWithConnection: (parentNodeId: string, content: string) => Promise<boolean>;
     getArguments: (id?: string) => Promise<ArgumentNode[]>;
     getMap: (id: string) => void;
+    switchStance: (nodeId: string) => Promise<[0 | 1, string]>;
 };
 
 

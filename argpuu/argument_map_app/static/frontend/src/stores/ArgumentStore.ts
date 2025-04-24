@@ -40,20 +40,17 @@ const useArgumentStore = create<AppState>((set, get) => ({
     set({ edges });
   },
 
-  updateNodeText: (nodeId: string, newText: string) => {
-    console.log(newText);
+  updateNodeContent: async (nodeId: string, newText: string): Promise<[0 | 1, string]> => {
     console.log("Updating node with id:", nodeId);
+
     set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === nodeId) {
-          return { ...node, data: { ...node.data, content: newText } };
-        }
-        return node;
-      }),
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId ? { ...node, data: { ...node.data, content: newText } } : node
+      ),
     });
 
-    const updateNodeRequest = async () => {
-      const csrfToken = getCSRFToken();
+    const csrfToken = getCSRFToken();
+    try {
       const response = await fetch(`/api/arguments/${nodeId}/`, {
         method: 'PATCH',
         headers: new Headers({
@@ -68,41 +65,79 @@ const useArgumentStore = create<AppState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(`Failed to update node ${nodeId}:`, response.status);
-      } else {
-        console.log(`Node ${nodeId} updated successfully.`);
+        return [0, "Argumendi uuendamine ebaõnnestus!"];
       }
-    };
 
-    updateNodeRequest();
+      return [1, "Argument edukalt uuendatud!"];
+    } catch (err) {
+      return [0, "Tekkis ootamatu viga argumendi uuendamisel!"];
+    }
   },
 
-  deleteNode: (nodeId: string) => {
-    console.log("Deleting node with id:", nodeId);
-
-    const deleteNodeRequest = async () => {
-      const csrfToken = getCSRFToken();
-      const response = await fetch(`/api/arguments/${nodeId}/`, {
+  deleteNode: async (nodeId: string): Promise<[0 | 1, string]> => {
+    const targetEdge = get().edges.find(edge => edge.target === nodeId);
+  
+    if (!targetEdge) {
+      return [0, "Tekkis probleem argumendi kustutamisel!"];
+    }
+  
+    const newSourceId = targetEdge.source;
+    const affectedEdges = get().edges.filter(edge => edge.source === nodeId);
+  
+    const csrfToken = getCSRFToken();
+  
+    try {
+      const patchResults = await Promise.all(affectedEdges.map(async (edge) => {
+        const response = await fetch(`/api/connections/${edge.id}/`, {
+          method: 'PATCH',
+          headers: new Headers({
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '',
+          }),
+          body: JSON.stringify({ 
+            source: newSourceId 
+          }),
+        });
+  
+        return response.ok;
+      }));
+  
+      if (patchResults.some(success => !success)) {
+        console.error("Failed to update some edges:", patchResults);
+        return [0, "Tekkis probleem ühenduste uuendamisel!"];
+      }
+  
+      const deleteResponse = await fetch(`/api/connections/${targetEdge.id}/`, {
         method: 'DELETE',
         headers: new Headers({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      } else {
-        console.log(response.status)
+  
+      if (!deleteResponse.ok) {
+        return [0, "Tekkis probleem argumendi kustutamisel!"];
       }
-    };
-
-    deleteNodeRequest();
-
-    set({
-      nodes: get().nodes.filter((node) => node.id !== nodeId),
-    });
+  
+      set({
+        nodes: get().nodes.filter(node => node.id !== nodeId),
+        edges: get().edges
+          .filter(edge => edge.target !== nodeId)
+          .map(edge => {
+            if (edge.source === nodeId) {
+              return { ...edge, source: newSourceId };
+            }
+            return edge;
+          }),
+      });
+  
+      return [1, "Argument kustutati."];
+    } catch (err) {
+      return [0, "Tekkis probleem argumendi kustutamisel!"];
+    }
   },
+  
+
   getMap: async (argumentMapId: string) => {
     const csrfToken = getCSRFToken();
 
@@ -122,37 +157,114 @@ const useArgumentStore = create<AppState>((set, get) => ({
     };
 
     try {
-      const argumentNodes = await fetchData(`/api/arguments/?argument_map=${argumentMapId}`);
+      const argumentEdges = await fetchData(`/api/connections/?argument_map=${argumentMapId}`);
 
-      if (argumentNodes.length === 0) {
-        console.warn("No arguments found for this map.");
+      if (argumentEdges.length === 0) {
+        console.warn("No connections found for this map.");
         return;
       }
 
-      const argumentIds = argumentNodes.map((node: any) => node.id).join(',');
-      const argumentEdges = await fetchData(`/api/connections/?arguments=${argumentIds}&argument_map=${argumentMapId}`);
+      const argumentIdSet = new Set<string>();
+      argumentEdges.forEach((edge: any) => {
+        argumentIdSet.add(edge.source);
+        argumentIdSet.add(edge.target);
+      });
 
-      const nodes: ArgumentNode[] = argumentNodes.map((node: any) => ({
-        ...node,
-        type: 'argument-node',
-      }));
+      const argumentIdList = Array.from(argumentIdSet).join(',');
+
+      const argumentNodes = await fetchData(`/api/arguments/?ids=${argumentIdList}`);
+      console.log("Fetched nodes:", argumentEdges);
       const edges: Edge[] = argumentEdges.map((edge: any) => ({
         id: `${edge.id}`,
         source: `${edge.source}`,
         target: `${edge.target}`,
-        data: { operator: edge.operator, stance: edge.stance },
+        data: { explanation: edge.explanation, stance: edge.data.stance },
       }));
+      
+      const nodes: ArgumentNode[] = argumentNodes.map((node: any) => {
+        const incomingEdge = edges.find((edge) => edge.target === node.id);
+        console.log(incomingEdge?.data)
+        return {
+          ...node,
+          type: 'argument-node',
+          data: {
+            ...node.data,
+            stance: incomingEdge?.data?.stance,
+            isTopic: !incomingEdge, 
+
+          },
+        };
+      });
+      
 
       const positionedNodes = applyDagreLayout(nodes, edges);
 
       set({
         argumentMapId: argumentMapId,
-        nodes: [...get().nodes, ...positionedNodes],
-        edges: [...get().edges, ...edges],
+        nodes: positionedNodes,
+        edges: edges,
       });
-
     } catch (error) {
       console.error('Error fetching argument map:', error);
+    }
+  },
+
+  switchStance: async (nodeId: string): Promise<[0 | 1, string]> => {
+    const edge = get().edges.find(edge => edge.target === nodeId);
+
+    if (!edge) {
+      return [0, "Seose muutmine ebaõnnestus – sobivat seost ei leitud!"];
+    }
+
+    let newStance: 'for' | 'against' | 'undefined';
+
+    switch (edge.data?.stance) {
+      case 'undefined':
+        newStance = 'for';
+        break;
+      case 'for':
+        newStance = 'against';
+        break;
+      case 'against':
+        newStance = 'undefined';
+        break;
+      default:
+        newStance = 'undefined';
+    }
+
+    const csrfToken = getCSRFToken();
+
+    try {
+      const response = await fetch(`/api/connections/${edge.id}/`, {
+        method: 'PATCH',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        }),
+        body: JSON.stringify({
+          data: {
+            stance: newStance,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        return [0, "Seose muutmine ebaõnnestus!"];
+      }
+      
+      set({
+        edges: get().edges.map((e) =>
+          e.id === edge.id ? { ...e, data: { ...e.data, stance: newStance } } : e
+        ),
+        nodes: get().nodes.map((node) =>
+          node.id === edge.target ? { ...node, data: { ...node.data, stance: newStance } } : node
+        ),  
+      });
+
+      return [1, "Seose hoiak edukalt muudetud!"];
+    } catch (error) {
+      console.error("Error updating stance:", error);
+      return [0, "Tekkis viga seose muutmisel!"];
     }
   },
 
@@ -160,31 +272,31 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
   createArgumentWithConnection: async (parentArgumentId: string, content: string): Promise<boolean> => {
     console.log("Parent node ID:", parentArgumentId);
-    
+
     const newNode = await get().createArgument(content);
     if (!newNode) return false;
-  
+
     const newEdge = await get().connectArguments(parentArgumentId, newNode.id);
     if (!newEdge) return false;
-  
+
     const positionedNodes = applyDagreLayout(
       [...get().nodes, newNode],
       [...get().edges, newEdge]
     );
-  
+
     set({
       nodes: positionedNodes,
       edges: [...get().edges, newEdge],
     });
-  
+
     console.log("Node and edge created successfully.");
     return true;
   },
-  
+
 
   createArgument: async (content: string): Promise<ArgumentNode | null> => {
     const csrfToken = getCSRFToken();
-  
+
     try {
       const nodeResponse = await fetch('/api/arguments/', {
         method: 'POST',
@@ -198,22 +310,23 @@ const useArgumentStore = create<AppState>((set, get) => ({
           data: { content },
         }),
       });
-  
+
       if (!nodeResponse.ok) {
         throw new Error(`Node creation failed: ${nodeResponse.status}`);
       }
-  
+
       const nodeData = await nodeResponse.json();
-  
+
       const newNode: ArgumentNode = {
         ...nodeData,
         type: "argument-node",
         data: {
           content: content,
+          stance: 'undefined',
           isTopic: false,
         },
       };
-  
+
       return newNode;
     } catch (err) {
       console.error("Error creating node:", err);
@@ -222,26 +335,27 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
 
   connectArguments: async (sourceId: string, targetId: string) => {
+
     const csrfToken = getCSRFToken();
     const argumentMapId = get().argumentMapId;
-  
+
     const ensureNodeInMap = async (nodeId: string) => {
       const nodeExists = get().nodes.some((node) => node.id === nodeId);
 
       if (!nodeExists) {
         try {
           const [fetchedNode] = await get().getArguments(nodeId);
-      
+
           if (!fetchedNode) {
             console.warn(`Node ${nodeId} not found in backend`);
             return;
           }
-      
+
           const updatedMapIds = [
             ...(fetchedNode.data.argument_map || []),
             argumentMapId,
           ];
-      
+
           const csrfToken = getCSRFToken();
           const response = await fetch(`/api/arguments/${nodeId}/`, {
             method: 'PATCH',
@@ -253,7 +367,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
               argument_map: updatedMapIds,
             }),
           });
-      
+
           if (!response.ok) {
             console.warn(`Could not append map ID to node ${nodeId}:`, response.status);
           } else {
@@ -263,9 +377,9 @@ const useArgumentStore = create<AppState>((set, get) => ({
           console.error(`Failed to patch node ${nodeId}:`, err);
         }
       }
-      
+
     };
-  
+
     await ensureNodeInMap(sourceId);
     await ensureNodeInMap(targetId);
     console.log("Argument map ID:!", argumentMapId);
@@ -280,13 +394,14 @@ const useArgumentStore = create<AppState>((set, get) => ({
           argument_map: argumentMapId,
           source: sourceId,
           target: targetId,
+          data: { stance: 'undefined' },
         }),
       });
-  
+
       if (!edgeResponse.ok) {
         throw new Error(`Edge creation failed: ${edgeResponse.status}`);
       }
-  
+
       const newEdge = await edgeResponse.json();
       return newEdge;
     } catch (err) {
@@ -294,7 +409,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
       return null;
     }
   },
-  
+
 
 
   getArguments: async (id?: string): Promise<ArgumentNode[]> => {
