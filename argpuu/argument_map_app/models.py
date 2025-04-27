@@ -1,5 +1,8 @@
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.contrib.auth.models import User
+import uuid
 
 
 class ArgumentMap(models.Model):
@@ -18,7 +21,8 @@ class Argument(models.Model):
     content = models.CharField(blank=True, null=True, max_length=1000)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments")
     contributors = models.ManyToManyField(User, related_name="argument_contributions", blank=True)
-    argument_map = models.ManyToManyField(ArgumentMap, related_name="arguments")
+    is_root = models.BooleanField(default=False)
+    argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="arguments", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     position_x = models.FloatField(default=0)
@@ -77,11 +81,20 @@ class Connection(models.Model):
         return f"Connection (Source ID: {self.source_argument.id}, Target ID: {self.target_argument.id}, Stance: {self.get_stance_display()})"
 
 
-class Log(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="logs")
-    argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="logs")
-    timestamp = models.DateTimeField(auto_now_add=True)  
-    change_description = models.TextField()  
 
-    def __str__(self):
-        return f"Log (Argument id: {self.argument.id}, timestamp: {self.timestamp})"
+class Log(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    argument_map = models.ForeignKey("ArgumentMap", on_delete=models.CASCADE, related_name="logs")
+    
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    target = GenericForeignKey('content_type', 'object_id')
+    
+    change_type = models.TextField()
+    change_description = models.TextField()
+    data_before = models.JSONField()
+    data_after = models.JSONField()
+    action_group_id = models.UUIDField(default=uuid.uuid4, db_index=True)
+    undone = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+

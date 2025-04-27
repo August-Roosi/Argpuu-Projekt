@@ -41,6 +41,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
 
   updateNodeContent: async (nodeId: string, newText: string): Promise<[0 | 1, string]> => {
+    const actionGroupId = crypto.randomUUID();
     console.log("Updating node with id:", nodeId);
 
     set({
@@ -56,7 +57,10 @@ const useArgumentStore = create<AppState>((set, get) => ({
         headers: new Headers({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
         }),
+        credentials: 'include',
         body: JSON.stringify({
           data: {
             content: newText,
@@ -75,9 +79,11 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
 
   deleteNode: async (nodeId: string): Promise<[0 | 1, string]> => {
+    const actionGroupId = crypto.randomUUID();
     const targetEdge = get().edges.find(edge => edge.target === nodeId);
   
     if (!targetEdge) {
+      console.error("Target edge not found for node ID:", nodeId);
       return [0, "Tekkis probleem argumendi kustutamisel!"];
     }
   
@@ -93,7 +99,11 @@ const useArgumentStore = create<AppState>((set, get) => ({
           headers: new Headers({
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken || '',
+            'X-Action-Group-Id': actionGroupId,
+            'X-Argument-Map-Id': get().argumentMapId,
+
           }),
+          credentials: 'include',
           body: JSON.stringify({ 
             source: newSourceId 
           }),
@@ -112,10 +122,15 @@ const useArgumentStore = create<AppState>((set, get) => ({
         headers: new Headers({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
+
         }),
+        credentials: 'include',
       });
   
       if (!deleteResponse.ok) {
+        console.error("Delete edge request failed:", deleteResponse.status);
         return [0, "Tekkis probleem argumendi kustutamisel!"];
       }
   
@@ -148,6 +163,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
         }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -157,11 +173,22 @@ const useArgumentStore = create<AppState>((set, get) => ({
     };
 
     try {
+
+      const rootArgument = await fetchData(`/api/arguments/?argument_map=${argumentMapId}`);
+      if (!rootArgument) {
+        console.warn("No root argument found for this map.");
+        return;
+      }
+      const rootNode: ArgumentNode[] = {
+        ...rootArgument[0],
+        type: 'argument-node',
+      }
+      
+
       const argumentEdges = await fetchData(`/api/connections/?argument_map=${argumentMapId}`);
 
       if (argumentEdges.length === 0) {
         console.warn("No connections found for this map.");
-        return;
       }
 
       const argumentIdSet = new Set<string>();
@@ -173,32 +200,31 @@ const useArgumentStore = create<AppState>((set, get) => ({
       const argumentIdList = Array.from(argumentIdSet).join(',');
 
       const argumentNodes = await fetchData(`/api/arguments/?ids=${argumentIdList}`);
-      console.log("Fetched nodes:", argumentEdges);
+      console.log("edges:", argumentEdges);
       const edges: Edge[] = argumentEdges.map((edge: any) => ({
         id: `${edge.id}`,
         source: `${edge.source}`,
         target: `${edge.target}`,
-        data: { explanation: edge.explanation, stance: edge.data.stance },
+        data: { explanation: edge.explanation, stance: edge.data.stance, author: edge.data.author },
       }));
       
       const nodes: ArgumentNode[] = argumentNodes.map((node: any) => {
         const incomingEdge = edges.find((edge) => edge.target === node.id);
-        console.log(incomingEdge?.data)
         return {
           ...node,
           type: 'argument-node',
           data: {
             ...node.data,
             stance: incomingEdge?.data?.stance,
-            isTopic: !incomingEdge, 
-
           },
         };
       });
       
+      console.log("Fetched nodes:", nodes);
+      console.log(rootNode)
 
-      const positionedNodes = applyDagreLayout(nodes, edges);
-
+      const positionedNodes = applyDagreLayout(nodes.concat(rootNode), edges);
+      
       set({
         argumentMapId: argumentMapId,
         nodes: positionedNodes,
@@ -210,6 +236,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
 
   switchStance: async (nodeId: string): Promise<[0 | 1, string]> => {
+    const actionGroupId = crypto.randomUUID();
     const edge = get().edges.find(edge => edge.target === nodeId);
 
     if (!edge) {
@@ -240,7 +267,10 @@ const useArgumentStore = create<AppState>((set, get) => ({
         headers: new Headers({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
         }),
+        credentials: 'include',
         body: JSON.stringify({
           data: {
             stance: newStance,
@@ -271,12 +301,13 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
 
   createArgumentWithConnection: async (parentArgumentId: string, content: string): Promise<boolean> => {
-    console.log("Parent node ID:", parentArgumentId);
+    const actionGroupId = crypto.randomUUID();
 
-    const newNode = await get().createArgument(content);
+
+    const newNode = await get().createArgument(content, actionGroupId);
     if (!newNode) return false;
 
-    const newEdge = await get().connectArguments(parentArgumentId, newNode.id);
+    const newEdge = await get().connectArguments(parentArgumentId, newNode.id, actionGroupId);
     if (!newEdge) return false;
 
     const positionedNodes = applyDagreLayout(
@@ -294,7 +325,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
 
 
-  createArgument: async (content: string): Promise<ArgumentNode | null> => {
+  createArgument: async (content: string, actionGroupId: string): Promise<ArgumentNode | null> => {
     const csrfToken = getCSRFToken();
 
     try {
@@ -303,10 +334,12 @@ const useArgumentStore = create<AppState>((set, get) => ({
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
         },
+        credentials: 'include',
         body: JSON.stringify({
           argument_map: [get().argumentMapId],
-          position: { x: 250, y: 250 },
           data: { content },
         }),
       });
@@ -320,11 +353,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
       const newNode: ArgumentNode = {
         ...nodeData,
         type: "argument-node",
-        data: {
-          content: content,
-          stance: 'undefined',
-          isTopic: false,
-        },
       };
 
       return newNode;
@@ -334,7 +362,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
     }
   },
 
-  connectArguments: async (sourceId: string, targetId: string) => {
+  connectArguments: async (sourceId: string, targetId: string, actionGroupId: string = crypto.randomUUID() ) => {
 
     const csrfToken = getCSRFToken();
     const argumentMapId = get().argumentMapId;
@@ -362,7 +390,11 @@ const useArgumentStore = create<AppState>((set, get) => ({
             headers: new Headers({
               'Content-Type': 'application/json',
               'X-CSRFToken': csrfToken || '',
+              'X-Action-Group-Id': actionGroupId,
+              'X-Argument-Map-Id': get().argumentMapId,
+
             }),
+            credentials: 'include',
             body: JSON.stringify({
               argument_map: updatedMapIds,
             }),
@@ -389,7 +421,11 @@ const useArgumentStore = create<AppState>((set, get) => ({
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
+
         },
+        credentials: 'include',
         body: JSON.stringify({
           argument_map: argumentMapId,
           source: sourceId,
@@ -424,6 +460,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
         }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -444,9 +481,46 @@ const useArgumentStore = create<AppState>((set, get) => ({
       console.error("Error fetching argument(s):", error);
       return [];
     }
+  },
+undo: async (): Promise<[0 | 1, string]> => {
+  try {
+    const response = await fetch('/api/undo/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken() || '',
+        'X-Argument-Map-Id': get().argumentMapId,
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      console.log("Response not ok:", response);
+      let errorMessage = 'Tagasivõtmine ebaõnnestus';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData?.message || errorMessage;
+      } catch (error) {
+        console.error('Error parsing error response:', error);
+      }
+      console.error('Undo failed:', errorMessage);
+      return [0, errorMessage];
+    } else if (response.status == 204) {
+      return [0, 'Pole midagi tagasi võtta.'];
+    }else {
+      return [1, 'Tagasivõtmine õnnestus.'];
+    }
+  } catch (error) {
+    console.error('Error during undo request:', error);
+    return [0, 'Tagasivõtmine ebaõnnestus'];
   }
+},
 
-
+  
+  reloadMap: () => {
+    get().getMap(get().argumentMapId);
+  },
+  
 
 
 }));

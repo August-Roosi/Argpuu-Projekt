@@ -1,6 +1,5 @@
 import {
   ReactFlow,
-  Controls,
   Background,
 } from '@xyflow/react';
 import { useEffect } from 'react';
@@ -16,6 +15,7 @@ import { useShallow } from 'zustand/react/shallow';
 import useModalStore from './stores/ModalStore';
 import useSearchStore from './stores/SearchStore';
 import Titlebar from './components/Titlebar';
+import Toolbar from './components/Toolbar';
 
 const argumentMapId = window.argumentMapId;
 const argumentMapsViewUrl = window.argumentMapsViewUrl;
@@ -54,7 +54,7 @@ function Flow() {
   useEffect(() => {
     console.log("Flow component has mounted.");
     console.log("Argument Map ID:", argumentMapId);
-    if (argumentMapId) {
+    if (argumentMapId && !isOpen) {
       getMap(argumentMapId);
     }
     if (isOpen) {
@@ -88,9 +88,8 @@ function Flow() {
         fitViewOptions={{ padding: 0.3 }}
       >
         <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} />
-
+        <Toolbar/>
         <Background />
-        <Controls />
 
         {isOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

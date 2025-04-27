@@ -12,7 +12,7 @@ import { TbBinaryTree } from 'react-icons/tb';
 
 export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
     const { id, data } = node_state;
-    const { isTopic, stance } = data;
+    const { is_root, stance } = data;
 
     const content: string = useArgumentStore((state: AppState) => {
         const node = state.nodes.find((node) => node.id === id);
@@ -126,8 +126,8 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
                 />
             ) : (
                 <div className='flex flex-col '>
-                    <div className={`flex ${!isTopic ? "justify-between":"justify-end"} items-center bg-white p-1 shadow-md rounded-t-none`}>
-                        {!isTopic &&
+                    <div className={`flex ${!is_root ? "justify-between":"justify-end"} items-center bg-white p-1 shadow-md rounded-t-none`}>
+                        {!is_root &&
                         <div className='w-full flex'>
                             {stance === 'for' ? (
                                 <button onClick={onSwitchStance} className='flex w-1/4 h-5 items-center justify-center'>
@@ -158,7 +158,7 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
                             <button className='px-1' onClick={() => onCreate(id)}>
                                 <TbBinaryTree className='w-6 h-6' />
                             </button>
-                            {!isTopic &&
+                            {!is_root &&
                             <button className='px-1' onClick={onDelete}>
                                 <MdDeleteOutline className='w-6 h-6'/>
                             </button>}
@@ -192,7 +192,7 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
                 <div className="absolute top-0 left-full ml-2 p-2 bg-gray-800 text-white rounded-md shadow-lg flex flex-wrap w-40 gap-x-2">
                     <p><strong>Tipu ID:</strong> {id}</p>
                     <p><strong>Tekst:</strong> {content || "Puudub"}</p>
-                    <p><strong>Juur:</strong> {isTopic ? "true" : "false"}</p>
+                    <p><strong>Juur:</strong> {is_root ? "true" : "false"}</p>
                 </div>
             )}
         </div>

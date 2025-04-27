@@ -3,11 +3,15 @@ from .serializers.serializer import ArgumentSerializer, ConnectionSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from rest_framework import viewsets
-from .models import Argument, ArgumentMap, Connection
+from .models import Argument, ArgumentMap, Connection, Log
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.views import APIView
+from django.db import transaction, models
+from .utils.create_log import create_log
+from .utils.deserialize_connection_data import deserialize_connection_data
 
 @login_required
 def view_argument_map(request, id=None):
@@ -18,7 +22,6 @@ def view_argument_map(request, id=None):
     else:
         # List view / create form
         argument_maps = ArgumentMap.objects.filter(author=request.user).order_by('-created_at')
-        print(argument_maps)
         return render(request, "list_argument_maps.html", {"argument_maps": argument_maps})
 
 @login_required
@@ -32,6 +35,14 @@ def create_argument_map(request):
             title=title,
             description=description,
             author=request.user  
+        )
+        Argument.objects.create(
+            content="See on sinu juurargument, seda ei saa kustutada aga et muuta tee topelt klõps!",
+            author=request.user,
+            is_root=True,
+            argument_map=argument_map,
+            position_x=0,
+            position_y=0
         )
         
         return redirect('view_argument_map', id=argument_map.id)
@@ -54,7 +65,14 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['argument_map']
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        action_group_id = self.request.headers.get('X-Action-Group-Id')
+        argument_map_id = self.request.headers.get('X-Argument-Map-Id')
 
+        context['action_group_id'] = action_group_id
+        context['argument_map_id'] = argument_map_id
+        return context
 
     def create(self, request, *args, **kwargs):
 
@@ -68,27 +86,60 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         print("User:", self.request.user)
-        print("Query Params:", self.request.query_params)
-        print("Request Data:", self.request.data)
+        print("Request Data:", self.request.body)
 
         queryset = Argument.objects.filter(author=self.request.user)
 
+        # Exclude specific argument map
         exclude_map_id = self.request.query_params.get('exclude_argument_map')
-        if exclude_map_id and exclude_map_id.isdigit():
-            queryset = queryset.exclude(argument_map__id=exclude_map_id)
+        if exclude_map_id is not None:  
+            if exclude_map_id.isdigit():
+                queryset = queryset.exclude(argument_map__id=int(exclude_map_id))
+            else:
+                queryset = queryset.none() 
 
+        # Filter by specific argument IDs
         argument_ids = self.request.query_params.get('ids')
-        if argument_ids:
-            try:
-                print("priivin")
-                id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
+        if argument_ids is not None:
+            id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
+            if id_list:
                 queryset = queryset.filter(id__in=id_list)
-            except ValueError:
-                pass  
+            else:
+                queryset = queryset.none()  
+
+        # Filter by a specific argument_map ID
+        filter_map_id = self.request.query_params.get('argument_map')
+        if filter_map_id is not None:
+            if filter_map_id.isdigit():
+                queryset = queryset.filter(argument_map__id=int(filter_map_id))
+            else:
+                queryset = queryset.none() 
 
         return queryset
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print("Deleting instance:", instance)
+        before = ArgumentSerializer(instance).data
+        argument_map_id = request.headers.get('X-Argument-Map-Id')
+        argument_map = ArgumentMap.objects.get(id=argument_map_id)
+
+        create_log(
+            user=request.user,
+            instance=instance,
+            argument_map=argument_map,
+            change_type="argument_deleted",
+            description="Deleted an argument",
+            data_before=before,
+            data_after={},
+            group_id=request.headers.get('X-Action-Group-Id') 
+        )
+        self.perform_destroy(instance)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+    
 class ConnectionViewSet(viewsets.ModelViewSet):  
     queryset = Connection.objects.all()
     serializer_class = ConnectionSerializer
@@ -96,8 +147,16 @@ class ConnectionViewSet(viewsets.ModelViewSet):
     filterset_fields = ['argument_map', 'source_argument', 'target_argument']
     permission_classes = [IsAuthenticated]
     
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        action_group_id = self.request.headers.get('X-Action-Group-Id')
+        argument_map_id = self.request.headers.get('X-Argument-Map-Id')
+
+        context['action_group_id'] = action_group_id
+        context['argument_map_id'] = argument_map_id
+        return context
+    
     def get_queryset(self):
-        print("ConnectionViewSet queryset:", self.request.data)
         return super().get_queryset()
 
     def list(self, request, *args, **kwargs):
@@ -117,3 +176,82 @@ class ConnectionViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print("Deleting instance:", instance)
+        before = ConnectionSerializer(instance).data
+        argument_map_id = request.headers.get('X-Argument-Map-Id')
+        argument_map = ArgumentMap.objects.get(id=argument_map_id)
+
+
+        create_log(
+            user=request.user,
+            instance=instance,
+            argument_map=argument_map,
+            change_type="connection_deleted",
+            description="Deleted a connection",
+            data_before=before,
+            data_after={},
+            group_id=request.headers.get('X-Action-Group-Id') 
+        )
+        self.perform_destroy(instance)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UndoActionGroupView(APIView):
+    def post(self, request):
+        user = request.user
+        argument_map_id = self.request.headers.get('X-Argument-Map-Id')
+        argument_map = ArgumentMap.objects.get(id=argument_map_id)
+
+        # Get the most recent action that hasn't been undone yet
+        latest_log = Log.objects.filter(user=user, argument_map=argument_map, undone=False).order_by('-created_at').first()
+
+        if not latest_log:
+            return Response({'detail': 'No actions to undo.'}, status=204)
+
+        # If there is an action_group_id, undo all logs from the group
+        if latest_log.action_group_id:
+            logs = Log.objects.filter(
+                user=user,
+                argument_map=argument_map,
+                action_group_id=latest_log.action_group_id,
+                undone=False
+            ).order_by('-created_at')
+        else:
+            # Otherwise, undo just the single latest log
+            logs = [latest_log]
+
+        with transaction.atomic():
+            for log in logs:
+                model_class = log.content_type.model_class()
+
+                try:
+                    instance = model_class.objects.filter(id=log.object_id).first()
+                    result = deserialize_connection_data(instance, log)
+                    if isinstance(result, dict):
+                        data = result
+                    else:
+                        instance = result
+                    print("Instance:", result)
+                    if log.change_type.endswith("_created"):
+                        print("Deleting instance:", instance)
+                        instance.delete()
+
+                    elif log.change_type.endswith("_updated"):
+                        instance.save()
+
+                    elif log.change_type.endswith("_deleted"):
+                        model_class.objects.create(**data)
+
+                    log.undone = True
+                    log.save()
+
+                except Exception as e:
+                    return Response({'error': f'Failed to undo log {log.id}: {str(e)}'}, status=500)
+
+        return Response({'detail': 'Undo successful.'}, status=200)
+
+    

@@ -15,7 +15,7 @@ import { ArgumentNode } from './ArgumentNode';
 
 
 export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
-export type ArgumentNode = Node<{ content: string, stance: 'for'|'against'|'undefined',  isTopic: boolean, argument_map: string[],  }, 'argument-node'>;
+export type ArgumentNode = Node<{ content: string, stance: 'for'|'against'|'undefined',  is_root: boolean, argument_map: string[],  }, 'argument-node'>;
 
 
 
@@ -33,12 +33,15 @@ export type AppState = {
     setEdges: (edges: Edge[]) => void;
     deleteNode: (nodeId: string) => Promise<[0 | 1, string]>;
     updateNodeContent: (nodeId: string, tekst: string) => Promise<[0 | 1, string]>;
-    createArgument: (content: string) => Promise<ArgumentNode | null>;
-    connectArguments: (sourceId: string, targetId: string) => Promise<Edge | null>;
+    createArgument: (content: string, actionGroupId: string) => Promise<ArgumentNode | null>;
+    connectArguments: (sourceId: string, targetId: string, actionGroupId?: string ) => Promise<Edge | null>;
     createArgumentWithConnection: (parentNodeId: string, content: string) => Promise<boolean>;
     getArguments: (id?: string) => Promise<ArgumentNode[]>;
     getMap: (id: string) => void;
     switchStance: (nodeId: string) => Promise<[0 | 1, string]>;
+    undo: () => Promise<[0 | 1, string]>;
+    reloadMap: () => void;
+
 };
 
 
