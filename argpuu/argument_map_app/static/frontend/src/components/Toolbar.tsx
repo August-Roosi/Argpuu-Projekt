@@ -26,8 +26,12 @@ const Toolbar: React.FC<ToolbarProps> = ({  }) => {
 
     return (
         <div>
-            <Controls orientation='horizontal' position='bottom-center' className='bg-gray-100 shadow-md'>
-                <ControlButton onClick={onUndo}>
+            <Controls 
+            orientation='horizontal' 
+            position='bottom-center' 
+            className='bg-gray-100 shadow-md p-2 gap-2'
+            >
+                <ControlButton onClick={onUndo} title='Võta tagasi' >
                     <GrUndo />
                 </ControlButton>
             </Controls>
