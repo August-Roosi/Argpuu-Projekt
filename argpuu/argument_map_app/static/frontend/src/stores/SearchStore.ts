@@ -1,18 +1,18 @@
 import { create } from 'zustand';
-import { type ArgumentNode } from '../nodes/types';
+import { type ArgumentNodes } from '../nodes/types';
 import { getCSRFToken } from '../utils/getCSRFToken';
 
 interface SearchState {
     
     searchTerm: string;
     setSearchTerm: (term: string) => void;
-    selectedArgument: ArgumentNode | null;
-    setSelectedArgument: (arg: ArgumentNode | null) => void;
-    argumentsList: ArgumentNode[];
-    setArgumentsList: (args: ArgumentNode[]) => void;
+    selectedArgument: ArgumentNodes | null;
+    setSelectedArgument: (arg: ArgumentNodes | null) => void;
+    argumentsList: ArgumentNodes[];
+    setArgumentsList: (args: ArgumentNodes[]) => void;
     loadingArguments: boolean;
     setLoadingArguments: (loading: boolean) => void;
-    filteredArguments: (currentNodeId: string) => ArgumentNode[];
+    filteredArguments: (currentNodeId: string) => ArgumentNodes[];
     getArgumentsFromApi: (argumentMapId: string) => Promise<void>;
 }
 
@@ -66,7 +66,7 @@ const useSearchStore = create<SearchState>((set, get) => ({
 
             const argumentNodes = await response.json();
 
-            const nodes: ArgumentNode[] = argumentNodes.map((node: any) => ({
+            const nodes: ArgumentNodes[] = argumentNodes.map((node: any) => ({
                 ...node,
                 type: 'argument-node',
             }));

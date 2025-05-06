@@ -20,39 +20,45 @@ class ArgumentMap(models.Model):
 class Argument(models.Model):
     content = models.CharField(blank=True, null=True, max_length=1000)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments")
-    contributors = models.ManyToManyField(User, related_name="argument_contributions", blank=True)
     is_root = models.BooleanField(default=False)
-    argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="arguments", null=True, blank=True)
+    argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="root_arguments", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    position_x = models.FloatField(default=0)
-    position_y = models.FloatField(default=0)
     
     def __str__(self):
         return f"Argument (id: {self.id})"
     
 
 class Operator(models.Model):
-    
     OPERATOR_TYPE_CHOICES = [
         ('AND', 'AND Operator'),
         ('OR', 'OR Operator'),
     ]
-    type = models.CharField(max_length=3, choices=OPERATOR_TYPE_CHOICES)  
+    argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="operators")
+    arguments = models.ManyToManyField('Argument', related_name="operators", blank=True)
+    operator_type = models.CharField(max_length=3, choices=OPERATOR_TYPE_CHOICES, blank=True)  
     created_at = models.DateTimeField(auto_now_add=True)  
     updated_at = models.DateTimeField(auto_now=True)  
+    
 
     def __str__(self):
-        return f"Operator (id: {self.id}, type: {self.get_type_display()})"
+        return f"Operator (id: {self.id}, type: {self.get_operator_type_display()})"
 
+    def auto_set_type(self):
+        argument_count = self.arguments.count()
+
+        if argument_count == 0:
+            self.delete()
+        else:
+            self.operator_type = 'OR' if argument_count > 1 else 'AND'
+            self.save()
 
 class Connection(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="connections")
     explanation = models.CharField(max_length=50, null=True)
     argument_map = models.ForeignKey(ArgumentMap, on_delete=models.CASCADE, related_name="connections")
     source_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="source_connections")
-    target_argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="target_connections")
-    operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name="operators", null=True, blank=True)
+    target_operator = models.ForeignKey(Operator, on_delete=models.CASCADE, related_name="target_connections")
 
     STANCE_CHOICES = [
         ('against', 'Against'),
@@ -68,17 +74,11 @@ class Connection(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  
     updated_at = models.DateTimeField(auto_now=True)  
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=~models.Q(source_argument=models.F('target_argument')),
-                name='prevent_self_connection',
-            )
-        ]
 
 
     def __str__(self):
-        return f"Connection (Source ID: {self.source_argument.id}, Target ID: {self.target_argument.id}, Stance: {self.get_stance_display()})"
+        return f"Connection (Source ID: {self.source_argument.id}, Target ID: {self.target_operator.id}, Stance: {self.get_stance_display()})"
+
 
 
 

@@ -1,17 +1,14 @@
 from rest_framework import serializers
-from ..models import Argument, ArgumentMap, Operator, Connection, Log
+from ..models import Argument, ArgumentMap, Operator, Connection, Operator
 from ..utils.create_log import create_log
 
 class ArgumentSerializer(serializers.ModelSerializer):
-    position = serializers.SerializerMethodField()
     data = serializers.JSONField(write_only=True)
 
     class Meta:
         model = Argument
-        fields = ['id', 'position', 'data']
+        fields = ['id', 'data']
 
-    def get_position(self, obj):
-        return {'x': obj.position_x, 'y': obj.position_y}
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -20,14 +17,11 @@ class ArgumentSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        position_data = self.initial_data.get('position', {})
         data_field = self.initial_data.get('data', {})
 
         argument = Argument.objects.create(
             author=self.context['request'].user,
             content=data_field.get('content'),
-            position_x=position_data.get('x', 0),
-            position_y=position_data.get('y', 0),
         )
         
         argument_map_id = self.context['argument_map_id']
@@ -47,11 +41,8 @@ class ArgumentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         before = ArgumentSerializer(instance).data
-        position_data = self.initial_data.get('position', {})
         data_field = self.initial_data.get('data', {})
 
-        instance.position_x = position_data.get('x', instance.position_x)
-        instance.position_y = position_data.get('y', instance.position_y)
         instance.content = data_field.get('content', instance.content)
 
         argument_map_id = self.context['argument_map_id']
@@ -71,25 +62,27 @@ class ArgumentSerializer(serializers.ModelSerializer):
         return instance
     
 class ConnectionSerializer(serializers.ModelSerializer):
-    argument_map = serializers.PrimaryKeyRelatedField(queryset=ArgumentMap.objects.all())
     source = serializers.PrimaryKeyRelatedField(source='source_argument', queryset=Argument.objects.all())
-    target = serializers.PrimaryKeyRelatedField(source='target_argument', queryset=Argument.objects.all())
+    target = serializers.PrimaryKeyRelatedField(source='target_operator', queryset=Operator.objects.all())
     data = serializers.JSONField(write_only=True)
     
     class Meta:
         model = Connection
-        fields = ['id', 'source', 'target', 'argument_map', 'data']
+        fields = ['id', 'source', 'target', 'data']
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['id'] = str(rep['id'])
         rep['source'] = str(instance.source_argument.id)
-        rep['target'] = str(instance.target_argument.id)
+        rep['target'] = str(instance.target_operator.id)
         rep['data'] = {'stance': instance.stance, 'explanation': instance.explanation, 'author': str(instance.author.id)}
         return rep
 
     def create(self, validated_data):
         data = validated_data.pop('data', {}) 
+        print("vallidated",validated_data)
+        argument_map_id = self.context['argument_map_id']
+        argument_map = ArgumentMap.objects.get(id=argument_map_id)
 
         stance = data.get('stance', 'undefined') 
         explanation = data.get('explanation', '')
@@ -97,10 +90,10 @@ class ConnectionSerializer(serializers.ModelSerializer):
             author=self.context['request'].user,
             stance=stance,
             explanation=explanation,
+            argument_map = argument_map,
             **validated_data
         )
-        argument_map_id = self.context['argument_map_id']
-        argument_map = ArgumentMap.objects.get(id=argument_map_id)
+        
 
         create_log(
             user=self.context['request'].user,
@@ -126,8 +119,9 @@ class ConnectionSerializer(serializers.ModelSerializer):
         if 'source_argument' in validated_data:
             instance.source_argument = validated_data['source_argument']
 
-        if 'target_argument' in validated_data:
-            instance.target_argument = validated_data['target_argument']
+        if 'target_operator' in validated_data:
+            instance.target_operator = validated_data['target_operator']
+
 
         argument_map_id = self.context['argument_map_id']
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
@@ -145,4 +139,59 @@ class ConnectionSerializer(serializers.ModelSerializer):
         )
         return instance
 
+
+
+class OperatorSerializer(serializers.ModelSerializer):
+    data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Operator
+        fields = ['id', 'data']
+
+    def get_data(self, obj):
+        return {
+            "argument_ids": list(obj.arguments.values_list('id', flat=True)),
+            "operator_type": obj.operator_type
+        }
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['id'] = str(instance.id)
+        ret['data'] = {
+            "argument_map": str(instance.argument_map.id) if instance.argument_map else None,
+            "argument_ids": [str(id) for id in instance.arguments.values_list('id', flat=True)],
+            "operator_type": instance.operator_type
+        }
+        return ret
+
+    def create(self, validated_data):
+        request_data = self.initial_data.get('data', {})
+        argument_ids = request_data.get('argument_ids', [])
+        operator_type = request_data.get('operator_type', 'AND')
+
+        operator = Operator.objects.create(
+            argument_map=ArgumentMap.objects.get(id=self.context['argument_map_id']), 
+            operator_type=operator_type,
+        )
+        if argument_ids:
+            arguments = Argument.objects.filter(id__in=argument_ids)
+            operator.arguments.set(arguments)
+
+        return operator
+
+    def update(self, instance, validated_data):
+        request_data = self.initial_data.get('data', {})
+        argument_ids = request_data.get('argument_ids')
+        operator_type = request_data.get('operator_type')
+
+        if argument_ids is not None:
+            arguments = Argument.objects.filter(id__in=argument_ids)
+            instance.arguments.set(arguments)
+
+        if operator_type is not None:
+            instance.operator_type = operator_type
+
+        instance.auto_set_type()  
+        instance.save()
+        return instance
 

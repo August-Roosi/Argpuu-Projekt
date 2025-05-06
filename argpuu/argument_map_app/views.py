@@ -3,7 +3,8 @@ from .serializers.serializer import ArgumentSerializer, ConnectionSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from rest_framework import viewsets
-from .models import Argument, ArgumentMap, Connection, Log
+from .models import Argument, ArgumentMap, Connection, Log, Operator
+from .serializers.serializer import OperatorSerializer
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from rest_framework import status
@@ -41,8 +42,6 @@ def create_argument_map(request):
             author=request.user,
             is_root=True,
             argument_map=argument_map,
-            position_x=0,
-            position_y=0
         )
         
         return redirect('view_argument_map', id=argument_map.id)
@@ -86,7 +85,7 @@ class ArgumentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         print("User:", self.request.user)
-        print("Request Data:", self.request.body)
+        print("Request Data:", self.request.query_params)
 
         queryset = Argument.objects.filter(author=self.request.user)
 
@@ -100,6 +99,7 @@ class ArgumentViewSet(viewsets.ModelViewSet):
 
         # Filter by specific argument IDs
         argument_ids = self.request.query_params.get('ids')
+        print(argument_ids)
         if argument_ids is not None:
             id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
             if id_list:
@@ -144,7 +144,7 @@ class ConnectionViewSet(viewsets.ModelViewSet):
     queryset = Connection.objects.all()
     serializer_class = ConnectionSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['argument_map', 'source_argument', 'target_argument']
+    filterset_fields = ['argument_map', 'source_argument', 'target_operator']
     permission_classes = [IsAuthenticated]
     
     def get_serializer_context(self):
@@ -157,8 +157,23 @@ class ConnectionViewSet(viewsets.ModelViewSet):
         return context
     
     def get_queryset(self):
+        print("User:", self.request.user)
+        print("Request Data:", self.request.body)
         return super().get_queryset()
+    
+    def create(self, request, *args, **kwargs):
+        print("CREATE REQUEST")
+        print("Request method:", request.method)
+        print("Request data:", request.data)
 
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("Serializer Errors:", serializer.errors)
+            return Response(serializer.errors, status=400)
+
+        self.perform_create(serializer)
+        return Response(serializer.data, status=201)
+    
     def list(self, request, *args, **kwargs):
         argument_ids = request.GET.get('arguments')
         argument_map_id = request.GET.get('argument_map')
@@ -169,7 +184,7 @@ class ConnectionViewSet(viewsets.ModelViewSet):
             argument_ids = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.isdigit()]
             queryset = queryset.filter(
                 Q(source_argument__id__in=argument_ids) &
-                Q(target_argument__id__in=argument_ids)
+                Q(target_operator__id__in=argument_ids)
             )
         if argument_map_id and argument_map_id.isdigit():
             queryset = queryset.filter(argument_map=argument_map_id)
@@ -178,6 +193,7 @@ class ConnectionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
+        print("dele")
         instance = self.get_object()
         print("Deleting instance:", instance)
         before = ConnectionSerializer(instance).data
@@ -198,6 +214,50 @@ class ConnectionViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OperatorViewSet(viewsets.ModelViewSet):
+    queryset = Operator.objects.all()
+    serializer_class = OperatorSerializer
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        action_group_id = self.request.headers.get('X-Action-Group-Id')
+        argument_map_id = self.request.headers.get('X-Argument-Map-Id')
+
+        context['action_group_id'] = action_group_id
+        context['argument_map_id'] = argument_map_id
+        return context
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        argument_map_id = self.request.query_params.get('argument_map')
+
+        if argument_map_id:
+            queryset = queryset.filter(argument_map_id=argument_map_id)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)  
+        instance = self.get_object()
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class UndoActionGroupView(APIView):

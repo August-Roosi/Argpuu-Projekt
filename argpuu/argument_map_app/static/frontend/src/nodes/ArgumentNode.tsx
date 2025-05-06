@@ -1,18 +1,16 @@
 import { useCallback, useState, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { type ArgumentNode, type AppState } from './types';
+import { type ArgumentNodes, type AppState } from './types';
 import useArgumentStore from '../stores/ArgumentStore';
 import useModalStore from '../stores/ModalStore';
 import ResizeTextArea from '../components/ResizeTextArea';
 import toast from 'react-hot-toast';
-import { BsNodePlus, BsNodeMinus } from 'react-icons/bs';
-import { TbCircuitSwitchClosed } from "react-icons/tb";
 import { MdDeleteOutline } from "react-icons/md";
 import { TbBinaryTree } from 'react-icons/tb';
 
-export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
+export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
     const { id, data } = node_state;
-    const { is_root, stance } = data;
+    const { is_root } = data;
 
     const content: string = useArgumentStore((state: AppState) => {
         const node = state.nodes.find((node) => node.id === id);
@@ -21,7 +19,6 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
 
     const updateNodeContent = useArgumentStore((state: AppState) => state.updateNodeContent);
     const deleteNode = useArgumentStore((state: AppState) => state.deleteNode);
-    const switchStance = useArgumentStore((state: AppState) => state.switchStance);
     const createArgument = useModalStore((state) => state.openModal);
 
 
@@ -32,10 +29,13 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
 
     const onCreate = createArgument;
     const onRename = useCallback(() => {
+        console.log("teen")
         setIsEditable(true);
     }, []);
     const onClick = useCallback(() => {
+
         setIsFlashing(true);
+        setIsEditable(true)
     }, []);
     const onDelete = useCallback(async () => {
         const result = await deleteNode(id);
@@ -82,14 +82,6 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
         setSisendTekst(evt.target.value);
     }, []);
 
-    const onSwitchStance = useCallback(async () => {
-        const result = await switchStance(id);
-        if (result[0] === 0) {
-            toast.error(result[1]);
-        } else {
-            toast.success(result[1]);
-        }
-    }, [switchStance, id]);
 
 
     useEffect(() => {
@@ -101,13 +93,10 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
 
     return (
         <div
-            className={`text-updater-node shadow-md  m-0 p-0 border-none relative react-flow__node-default flex flex-col gap-1 rounded-none bg-gray-100 text-gray-800 shadow-gray-600 min-w-64 w-fit max-w-64 
+            className={`text-updater-node shadow-md  m-0 p-0 border-none relative react-flow__node-default flex flex-col gap-1 rounded-none bg-gray-100 text-gray-800 shadow-gray-600 min-w-40 w-fit max-w-64 
                 ${isEditable ? "size-max p-2": ""}  transition-colors duration-200 
                 ${isFlashing ? 'animate-radiate bg-yellow-300' : ''} 
-                ${stance === 'for' ? 'bg-green-300' :
-                    stance === 'against' ? 'bg-red-300' :
-                        'bg-gray-200'
-                }`}
+                `}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -127,23 +116,7 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
             ) : (
                 <div className='flex flex-col '>
                     <div className={`flex ${!is_root ? "justify-between":"justify-end"} items-center bg-white p-1 shadow-md rounded-t-none`}>
-                        {!is_root &&
-                        <div className='w-full flex'>
-                            {stance === 'for' ? (
-                                <button onClick={onSwitchStance} className='flex w-1/4 h-5 items-center justify-center'>
-                                    <BsNodePlus className='w-7 h-7 hover:bg-gray-100 rounded-full p-1' />
-                                </button>
-                            ) : stance === 'against' ? (
-                                <button onClick={onSwitchStance} className='flex w-1/4 h-5 items-center justify-center'>
-                                    <BsNodeMinus className='w-7 h-7 hover:bg-gray-100 rounded-full p-1 rotate-180' />
-                                </button>
-                            ) : (
-                                <button onClick={onSwitchStance} className='flex w-1/4 h-5 items-center justify-center'>
-                                    <TbCircuitSwitchClosed className='w-7 h-7 hover:bg-gray-100 rounded-full p-1' />
-                                </button>
-                            )}
 
-                        </div>}
                         <div className={`flex flex-row justify-end `}>
                             {/* <button className='px-1' onClick={onRename}>
                                 <div className='bg-yellow-400 rounded-xl w-3 h-3 hover:bg-yellow-200 focus:bg-yellow-600'></div>
@@ -155,7 +128,7 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNode>) {
                                 <button className='px-1' onClick={onDelete}>
                                     <div className='bg-red-400 rounded-xl w-3 h-3 hover:bg-red-200 focus:bg-red-600'></div>
                                 </button>} */}
-                            <button className='px-1' onClick={() => onCreate(id)}>
+                            <button className='px-1' onClick={() => onCreate(false, id)}>
                                 <TbBinaryTree className='w-6 h-6' />
                             </button>
                             {!is_root &&

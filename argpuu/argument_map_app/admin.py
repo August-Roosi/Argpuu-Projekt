@@ -16,16 +16,20 @@ class ArgumentAdmin(admin.ModelAdmin):
 
 @admin.register(Operator)
 class OperatorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'created_at', 'updated_at')
-    list_filter = ('type', 'created_at')
-    search_fields = ('type',)
+    list_display = ('id', 'operator_type', 'created_at', 'updated_at')
+    list_filter = ('operator_type', 'created_at')
+    search_fields = ('operator_type',)
 
 @admin.register(Connection)
 class ConnectionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'source_argument', 'target_argument', 'operator', 'stance', 'created_at', 'updated_at')
-    list_filter = ('operator', 'stance', 'created_at')
-    search_fields = ('source_argument__content', 'target_argument__content')
+    list_display = ('id', 'source_argument', 'target_operator', 'stance', 'created_at', 'updated_at')
+    list_filter = ('stance', 'created_at')
+    search_fields = ('source_argument__content', 'target_operator__operator_type')
     
+    
+
+
+
 
 @admin.register(Log)
 class LogAdmin(admin.ModelAdmin):

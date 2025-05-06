@@ -12,6 +12,7 @@
     "@xyflow/react": "^12.3.6",
     "classnames": "^2.5.1",
     "dagre": "^0.8.5",
+    "framer-motion": "^12.9.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.5.2",

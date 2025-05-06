@@ -32,6 +32,8 @@ const selector = (state: AppState) => ({
   getMap: state.getMap,
   connectArguments: state.connectArguments,
   createArgumentWithConnection: state.createArgumentWithConnection,
+  createSiblingArgument: state.createSiblingArgument,
+  
 });
 
 
@@ -40,8 +42,8 @@ const selector = (state: AppState) => ({
 function Flow() {
 
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection } = useArgumentStore(useShallow(selector),);
-  const { isOpen, nodeId: parentArgumentId, closeModal } = useModalStore();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection, createSiblingArgument } = useArgumentStore(useShallow(selector),);
+  const { isOpen, isSibling, nodeId: parentArgumentId, closeModal } = useModalStore();
   const { searchTerm,
     setSearchTerm,
     filteredArguments,
@@ -129,7 +131,12 @@ function Flow() {
                         toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                         return;
                       }
-                      const result = await createArgumentWithConnection(parentArgumentId, searchTerm);
+                      let result;
+                      if (isSibling){
+                        result = await createSiblingArgument(parentArgumentId, searchTerm);
+                      } else {
+                        result = await createArgumentWithConnection(parentArgumentId, searchTerm);
+                      }
                       if (!result) {
                         toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                         return;

@@ -10,34 +10,34 @@ import {
 } from '@xyflow/react';
 import type { NodeTypes } from '@xyflow/react';
 
-import { PositionLoggerNode } from './PositionLoggerNode';
 import { ArgumentNode } from './ArgumentNode';
+import { OperatorNode } from './OperatorNode';
 
+export type ArgumentNodes = Node<{ content: string; is_root: boolean; argument_map: string[] }, 'argument-node'>;
+export type OperatorNodes = Node<{ argument_ids: string[]; operator_type: 'AND' | 'OR'; stance: 'for' | 'against' | 'undefined';}, 'operator-node'>;
 
-export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
-export type ArgumentNode = Node<{ content: string, stance: 'for'|'against'|'undefined',  is_root: boolean, argument_map: string[],  }, 'argument-node'>;
-
-
-
-export type AppNode = Node | BuiltInNode | ArgumentNode;
+export type AppNode = Node | BuiltInNode | OperatorNodes | ArgumentNodes ;
 export type AppState = {
     argumentMapId: string;
-    nodes: ArgumentNode[];
+    nodes: AppNode[];
     edges: Edge[];
-    onNodesChange: OnNodesChange<ArgumentNode>;
+    onNodesChange: OnNodesChange<AppNode>;
     onEdgesChange: OnEdgesChange;
     onConnect: OnConnect;
     onConnectEnd: OnConnectEnd;
     onConnectStart: OnConnectStart;
-    setNodes: (nodes: ArgumentNode[]) => void;
+    setNodes: (nodes: AppNode[]) => void;
     setEdges: (edges: Edge[]) => void;
     deleteNode: (nodeId: string) => Promise<[0 | 1, string]>;
     updateNodeContent: (nodeId: string, tekst: string) => Promise<[0 | 1, string]>;
-    createArgument: (content: string, actionGroupId: string) => Promise<ArgumentNode | null>;
+    createArgument: (content: string, actionGroupId: string) => Promise<AppNode | null>;
+    createOperator: (actionGroupId: string, argumentId: string) => Promise<AppNode | null>;
     connectArguments: (sourceId: string, targetId: string, actionGroupId?: string ) => Promise<Edge | null>;
     createArgumentWithConnection: (parentNodeId: string, content: string) => Promise<boolean>;
-    getArguments: (id?: string) => Promise<ArgumentNode[]>;
+    getArguments: (id?: string) => Promise<ArgumentNodes[]>;
     getMap: (id: string) => void;
+    createSiblingArgument: (operatorId: string, content: string) => Promise<boolean>;
+
     switchStance: (nodeId: string) => Promise<[0 | 1, string]>;
     undo: () => Promise<[0 | 1, string]>;
     reloadMap: () => void;
@@ -47,7 +47,7 @@ export type AppState = {
 
 
 export const nodeTypes = {
-    'position-logger': PositionLoggerNode,
     'argument-node': ArgumentNode,
+    'operator-node': OperatorNode,
 } satisfies NodeTypes;
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { addEdge, applyNodeChanges, applyEdgeChanges, Edge } from '@xyflow/react';
-import { type AppState, type ArgumentNode } from '../nodes/types';
+import { AppNode, type OperatorNodes, type AppState, type ArgumentNodes } from '../nodes/types';
 import { getCSRFToken } from '../utils/getCSRFToken';
 import { applyDagreLayout } from '../utils/dagreLayout';
 
@@ -71,7 +71,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
       if (!response.ok) {
         return [0, "Argumendi uuendamine ebaõnnestus!"];
       }
-
       return [1, "Argument edukalt uuendatud!"];
     } catch (err) {
       return [0, "Tekkis ootamatu viga argumendi uuendamisel!"];
@@ -80,19 +79,50 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
   deleteNode: async (nodeId: string): Promise<[0 | 1, string]> => {
     const actionGroupId = crypto.randomUUID();
-    const targetEdge = get().edges.find(edge => edge.target === nodeId);
+    const operatorNode = get().nodes.find(node => 
+      node.type == "operator-node" && 
+      Array.isArray((node.data as { argument_ids: string[] }).argument_ids) &&
+      (node.data as { argument_ids: string[] }).argument_ids.includes(nodeId)
+    );
+    if (!operatorNode){
+      console.error("Did not find operator node for argument node!")
+      return [0, "Ebaõnnestus argumendi kustutamine."]
+    }
+    const targetEdge = get().edges.find(edge => edge.target === operatorNode.id);
   
     if (!targetEdge) {
       console.error("Target edge not found for node ID:", nodeId);
       return [0, "Tekkis probleem argumendi kustutamisel!"];
     }
   
+
     const newSourceId = targetEdge.source;
     const affectedEdges = get().edges.filter(edge => edge.source === nodeId);
-  
+    const updatedArgumentIds = (operatorNode.data as { argument_ids: string[] }).argument_ids.filter(id => id !== nodeId);
+    
     const csrfToken = getCSRFToken();
-  
+    
     try {
+      const operatorPatchResponse = await fetch(`/api/operators/${operatorNode.id}/`, {
+        method: 'PATCH',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
+        }),
+        credentials: 'include',
+        body: JSON.stringify({
+          data: {
+            argument_ids: updatedArgumentIds
+          }
+        }),
+      });
+    
+      if (!operatorPatchResponse.ok) {
+        console.error("Failed to patch operator node:", operatorPatchResponse.status);
+        return [0, "Tekkis probleem rühma uuendamisel!"];
+      }
       const patchResults = await Promise.all(affectedEdges.map(async (edge) => {
         const response = await fetch(`/api/connections/${edge.id}/`, {
           method: 'PATCH',
@@ -116,26 +146,36 @@ const useArgumentStore = create<AppState>((set, get) => ({
         console.error("Failed to update some edges:", patchResults);
         return [0, "Tekkis probleem ühenduste uuendamisel!"];
       }
-  
-      const deleteResponse = await fetch(`/api/connections/${targetEdge.id}/`, {
-        method: 'DELETE',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-          'X-Action-Group-Id': actionGroupId,
-          'X-Argument-Map-Id': get().argumentMapId,
-
-        }),
-        credentials: 'include',
+      let updatedNodes = get().nodes.map(node => {
+        if (node.id === operatorNode.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              argument_ids: updatedArgumentIds
+            }
+          };
+        }
+        return node;
       });
-  
-      if (!deleteResponse.ok) {
-        console.error("Delete edge request failed:", deleteResponse.status);
-        return [0, "Tekkis probleem argumendi kustutamisel!"];
-      }
-  
+      
+      updatedNodes = updatedNodes.filter(node => {
+        if (node.id === nodeId) return false;
+        if (
+          node.id === operatorNode.id &&
+          updatedArgumentIds.length === 0
+        ) return false;
+        return true;
+      });
+
+      const positionedNodes = applyDagreLayout(
+        updatedNodes,
+        get().edges
+      );
+      
+      
       set({
-        nodes: get().nodes.filter(node => node.id !== nodeId),
+        nodes: positionedNodes,        
         edges: get().edges
           .filter(edge => edge.target !== nodeId)
           .map(edge => {
@@ -179,51 +219,74 @@ const useArgumentStore = create<AppState>((set, get) => ({
         console.warn("No root argument found for this map.");
         return;
       }
-      const rootNode: ArgumentNode[] = {
+      const rootNode: AppNode = {
         ...rootArgument[0],
         type: 'argument-node',
       }
-      
 
       const argumentEdges = await fetchData(`/api/connections/?argument_map=${argumentMapId}`);
+      const operators = await fetchData(`/api/operators/?argument_map=${argumentMapId}`);
 
+    
       if (argumentEdges.length === 0) {
         console.warn("No connections found for this map.");
       }
+      if (operators.length === 0) {
+        console.warn("No operators found for this map.");
+      }
 
-      const argumentIdSet = new Set<string>();
-      argumentEdges.forEach((edge: any) => {
-        argumentIdSet.add(edge.source);
-        argumentIdSet.add(edge.target);
-      });
-
-      const argumentIdList = Array.from(argumentIdSet).join(',');
-
-      const argumentNodes = await fetchData(`/api/arguments/?ids=${argumentIdList}`);
-      console.log("edges:", argumentEdges);
       const edges: Edge[] = argumentEdges.map((edge: any) => ({
         id: `${edge.id}`,
         source: `${edge.source}`,
         target: `${edge.target}`,
         data: { explanation: edge.explanation, stance: edge.data.stance, author: edge.data.author },
       }));
-      
-      const nodes: ArgumentNode[] = argumentNodes.map((node: any) => {
-        const incomingEdge = edges.find((edge) => edge.target === node.id);
+
+      const operatorNodes: OperatorNodes[]= operators.map((operator: OperatorNodes)=>{
+        const incomingEdge = edges.find((edge) => edge.target === operator.id);
+        
+        return {
+          ...operator,
+          type: "operator-node",
+          data: {
+            ...operator.data,
+            stance: incomingEdge?.data?.stance,
+
+          }
+
+        }
+      });
+
+
+      const argumentIdSet = new Set<string>();
+      operatorNodes.forEach((operator: OperatorNodes) => {
+        operator.data.argument_ids.forEach((id: string) => argumentIdSet.add(id));
+      });
+      const argumentIdList = Array.from(argumentIdSet).join(',');
+      const argumentNodes = await fetchData(`/api/arguments/?ids=${argumentIdList}`);
+
+
+
+      const nodes: AppNode[] = argumentNodes.map((node: any) => {
+        const operator = operatorNodes.find((operator: OperatorNodes)=> operator.data.argument_ids.includes(node.id))
         return {
           ...node,
           type: 'argument-node',
+          parentId: operator?.id,
+          extent: operator? 'parent':'',
+          draggable: false,
           data: {
             ...node.data,
-            stance: incomingEdge?.data?.stance,
           },
         };
       });
-      
-      console.log("Fetched nodes:", nodes);
-      console.log(rootNode)
 
-      const positionedNodes = applyDagreLayout(nodes.concat(rootNode), edges);
+      
+
+      const positionedNodes = applyDagreLayout(
+        [rootNode].concat(operatorNodes).concat(nodes),
+        edges
+      );
       
       set({
         argumentMapId: argumentMapId,
@@ -234,6 +297,8 @@ const useArgumentStore = create<AppState>((set, get) => ({
       console.error('Error fetching argument map:', error);
     }
   },
+
+
 
   switchStance: async (nodeId: string): Promise<[0 | 1, string]> => {
     const actionGroupId = crypto.randomUUID();
@@ -298,23 +363,29 @@ const useArgumentStore = create<AppState>((set, get) => ({
     }
   },
 
-
+  
 
   createArgumentWithConnection: async (parentArgumentId: string, content: string): Promise<boolean> => {
     const actionGroupId = crypto.randomUUID();
 
+  
 
     const newNode = await get().createArgument(content, actionGroupId);
     if (!newNode) return false;
 
-    const newEdge = await get().connectArguments(parentArgumentId, newNode.id, actionGroupId);
+    const newOperator = await get().createOperator(actionGroupId, newNode.id)
+    if (!newOperator) return false;
+
+    const newEdge = await get().connectArguments(parentArgumentId, newOperator.id, actionGroupId);
     if (!newEdge) return false;
 
+
     const positionedNodes = applyDagreLayout(
-      [...get().nodes, newNode],
+      [...get().nodes, { ...newNode, parentId: newOperator.id, extent:'parent'}, newOperator],
       [...get().edges, newEdge]
     );
 
+    console.log("positi", positionedNodes)
     set({
       nodes: positionedNodes,
       edges: [...get().edges, newEdge],
@@ -324,8 +395,45 @@ const useArgumentStore = create<AppState>((set, get) => ({
     return true;
   },
 
+  createOperator: async (actionGroupId: string, argumentId): Promise<OperatorNodes | null> => {
+    const csrfToken = getCSRFToken();
+  
+    try {
+      const operatorResponse = await fetch('/api/operators/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+          'X-Action-Group-Id': actionGroupId,
+          'X-Argument-Map-Id': get().argumentMapId,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          argument_map: [get().argumentMapId],
+          data: {argument_ids: [argumentId]}
+        }),
+      });
+  
+      if (!operatorResponse.ok) {
+        throw new Error(`Operator creation failed: ${operatorResponse.status}`);
+      }
+  
+      const operatorData = await operatorResponse.json();
+  
+      const OperatorNode: OperatorNodes = {
+        ...operatorData,
+        type: "operator-node",
+      };
+  
+      return OperatorNode;
+    } catch (err) {
+      console.error("Error creating operator:", err);
+      return null;
+    }
+  },
+  
 
-  createArgument: async (content: string, actionGroupId: string): Promise<ArgumentNode | null> => {
+  createArgument: async (content: string, actionGroupId: string): Promise<ArgumentNodes | null> => {
     const csrfToken = getCSRFToken();
 
     try {
@@ -341,6 +449,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
         body: JSON.stringify({
           argument_map: [get().argumentMapId],
           data: { content },
+          
         }),
       });
 
@@ -350,7 +459,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
       const nodeData = await nodeResponse.json();
 
-      const newNode: ArgumentNode = {
+      const newNode: ArgumentNodes = {
         ...nodeData,
         type: "argument-node",
       };
@@ -361,6 +470,74 @@ const useArgumentStore = create<AppState>((set, get) => ({
       return null;
     }
   },
+  createSiblingArgument: async (operatorId: string, content: string): Promise<boolean> => {
+    const csrfToken = getCSRFToken();
+    const actionGroupId = crypto.randomUUID();
+  
+    const newNode = await get().createArgument(content, actionGroupId);
+    if (!newNode) return false;
+    console.log(newNode)
+    console.log(operatorId)
+    const operatorNode = get().nodes.find(node => node.id === operatorId && node.type === 'operator-node');
+    if (!operatorNode) return false;
+    console.log(operatorNode)
+
+    
+    const currentArgumentIds = Array.isArray((operatorNode.data as { argument_ids: string[] }).argument_ids)
+      ? Array.isArray((operatorNode.data as { argument_ids: string[] }).argument_ids)
+        ? (operatorNode.data as { argument_ids: string[] }).argument_ids
+        : []
+      : [];
+  
+    const updatedArgumentIds = [...currentArgumentIds, newNode.id];
+    console.log("updatedids",updatedArgumentIds)
+  
+    const patchRes = await fetch(`/api/operators/${operatorId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+        'X-Action-Group-Id': actionGroupId,
+        'X-Argument-Map-Id': get().argumentMapId,
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        data: {
+          argument_ids: updatedArgumentIds,
+        }
+      }),
+    });
+  
+    if (!patchRes.ok) {
+      console.error('Failed to patch operator with new argument');
+      return false;
+    }
+  
+    const updatedNodes: AppNode[] = [
+      ...get().nodes.map(n => {
+        if (n.id === operatorId) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              argument_ids: updatedArgumentIds,
+            },
+          };
+        }
+        return n;
+      }),
+      { ...newNode, parentId: operatorId, extent: 'parent' },
+    ];
+  
+    const positionedNodes = applyDagreLayout(updatedNodes, get().edges);
+  
+    set({ nodes: positionedNodes });
+  
+    console.log('Sibling argument created and added.');
+    return true;
+  },
+  
+  
 
   connectArguments: async (sourceId: string, targetId: string, actionGroupId: string = crypto.randomUUID() ) => {
 
@@ -413,7 +590,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
     };
 
     await ensureNodeInMap(sourceId);
-    await ensureNodeInMap(targetId);
     console.log("Argument map ID:!", argumentMapId);
     try {
       const edgeResponse = await fetch('/api/connections/', {
@@ -427,7 +603,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
         },
         credentials: 'include',
         body: JSON.stringify({
-          argument_map: argumentMapId,
           source: sourceId,
           target: targetId,
           data: { stance: 'undefined' },
@@ -435,7 +610,8 @@ const useArgumentStore = create<AppState>((set, get) => ({
       });
 
       if (!edgeResponse.ok) {
-        throw new Error(`Edge creation failed: ${edgeResponse.status}`);
+        const errorData = await edgeResponse.json();
+        throw new Error(`Edge creation failed: ${errorData?.detail || 'Unknown error'}`);
       }
 
       const newEdge = await edgeResponse.json();
@@ -448,7 +624,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
 
 
-  getArguments: async (id?: string): Promise<ArgumentNode[]> => {
+  getArguments: async (id?: string): Promise<ArgumentNodes[]> => {
     const csrfToken = getCSRFToken();
 
     const url = id ? `/api/arguments/${id}` : `/api/arguments/`;
@@ -471,7 +647,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
       const argumentArray = Array.isArray(data) ? data : [data];
 
-      const nodes: ArgumentNode[] = argumentArray.map((node: any) => ({
+      const nodes: ArgumentNodes[] = argumentArray.map((node: any) => ({
         ...node,
         type: 'argument-node',
       }));
