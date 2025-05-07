@@ -99,28 +99,41 @@ const useArgumentStore = create<AppState>((set, get) => ({
     const newSourceId = targetEdge.source;
     const affectedEdges = get().edges.filter(edge => edge.source === nodeId);
     const updatedArgumentIds = (operatorNode.data as { argument_ids: string[] }).argument_ids.filter(id => id !== nodeId);
-    
     const csrfToken = getCSRFToken();
     
     try {
-      const operatorPatchResponse = await fetch(`/api/operators/${operatorNode.id}/`, {
-        method: 'PATCH',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-          'X-Action-Group-Id': actionGroupId,
-          'X-Argument-Map-Id': get().argumentMapId,
-        }),
-        credentials: 'include',
-        body: JSON.stringify({
-          data: {
-            argument_ids: updatedArgumentIds
-          }
-        }),
+      const url = `/api/operators/${operatorNode.id}/`;
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+        'X-Action-Group-Id': actionGroupId,
+        'X-Argument-Map-Id': get().argumentMapId,
       });
     
-      if (!operatorPatchResponse.ok) {
-        console.error("Failed to patch operator node:", operatorPatchResponse.status);
+      let response: Response;
+    
+      if (updatedArgumentIds.length === 0) {
+        response = await fetch(url, {
+          method: 'DELETE',
+          headers,
+          credentials: 'include',
+        });
+      } else {
+        response = await fetch(url, {
+          method: 'PATCH',
+          headers,
+          credentials: 'include',
+          body: JSON.stringify({
+            data: {
+              argument_ids: updatedArgumentIds
+            }
+          }),
+        });
+      }
+  
+    
+      if (!response.ok) {
+        console.error("Failed to patch operator node:", response.status);
         return [0, "Tekkis probleem rühma uuendamisel!"];
       }
       const patchResults = await Promise.all(affectedEdges.map(async (edge) => {
@@ -168,22 +181,24 @@ const useArgumentStore = create<AppState>((set, get) => ({
         return true;
       });
 
-      const positionedNodes = applyDagreLayout(
-        updatedNodes,
-        get().edges
-      );
-      
-      
-      set({
-        nodes: positionedNodes,        
-        edges: get().edges
+      const filteredEdges = get().edges
           .filter(edge => edge.target !== nodeId)
           .map(edge => {
             if (edge.source === nodeId) {
               return { ...edge, source: newSourceId };
             }
             return edge;
-          }),
+          });
+
+      const positionedNodes = applyDagreLayout(
+        updatedNodes,
+        filteredEdges
+      );
+      
+      
+      set({
+        nodes: positionedNodes,        
+        edges: filteredEdges 
       });
   
       return [1, "Argument kustutati."];

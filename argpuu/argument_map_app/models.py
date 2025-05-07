@@ -46,12 +46,8 @@ class Operator(models.Model):
 
     def auto_set_type(self):
         argument_count = self.arguments.count()
-
-        if argument_count == 0:
-            self.delete()
-        else:
-            self.operator_type = 'OR' if argument_count > 1 else 'AND'
-            self.save()
+        self.operator_type = 'OR' if argument_count > 1 else 'AND'
+        self.save()
 
 class Connection(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="connections")

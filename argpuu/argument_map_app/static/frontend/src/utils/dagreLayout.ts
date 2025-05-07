@@ -10,7 +10,7 @@ export const applyDagreLayout = (nodes: AppNode[], edges: Edge[]): AppNode[] => 
     const g = new dagre.graphlib.Graph();
     g.setGraph({
         ranksep: 100,
-        nodesep: 30,
+        nodesep: 50,
     });
     g.setDefaultEdgeLabel(() => ({}));
 
@@ -36,7 +36,7 @@ export const applyDagreLayout = (nodes: AppNode[], edges: Edge[]): AppNode[] => 
 
 
         operatorNodes.forEach((operatorNode) => {
-            const width = 300;
+            const width = 150;
             const height = 60;
 
             let order = 0;
@@ -57,7 +57,23 @@ export const applyDagreLayout = (nodes: AppNode[], edges: Edge[]): AppNode[] => 
                     return edge 
                 }
             })
-            g.setNode(operatorNode.id, { width: (width + (operatorNode.data.argument_ids.length * 100)), height}); 
+
+            const maxContentLength = argumentNodes
+            .filter((node) => operatorNode.data.argument_ids.includes(node.id))
+            .reduce((max, node) => {
+                if ('content' in node.data && typeof node.data.content === 'string') {
+                    return Math.max(max, node.data.content.length);
+                }
+                return max;
+            }, 0);
+    
+
+            
+            const charsPerLine = 35;
+            const lines = Math.ceil(maxContentLength / charsPerLine);
+
+
+            g.setNode(operatorNode.id, { width: (width + (operatorNode.data.argument_ids.length * 150)), height: (height+ (lines*40))}); 
         });
 
 
@@ -102,7 +118,7 @@ export const applyDagreLayout = (nodes: AppNode[], edges: Edge[]): AppNode[] => 
                     return {
                         ...node,
                         position: {
-                            x: dagreNode.x,
+                            x: dagreNode.x- dagreNode.width / 1.7,
                             y: dagreNode.y,
                         },
                     };

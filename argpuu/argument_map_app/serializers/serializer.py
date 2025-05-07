@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from ..models import Argument, ArgumentMap, Operator, Connection, Operator
 from ..utils.create_log import create_log
+from rest_framework.exceptions import ValidationError
 
 class ArgumentSerializer(serializers.ModelSerializer):
     data = serializers.JSONField(write_only=True)
@@ -182,14 +183,9 @@ class OperatorSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request_data = self.initial_data.get('data', {})
         argument_ids = request_data.get('argument_ids')
-        operator_type = request_data.get('operator_type')
 
-        if argument_ids is not None:
-            arguments = Argument.objects.filter(id__in=argument_ids)
-            instance.arguments.set(arguments)
-
-        if operator_type is not None:
-            instance.operator_type = operator_type
+        arguments = Argument.objects.filter(id__in=argument_ids)
+        instance.arguments.set(arguments)
 
         instance.auto_set_type()  
         instance.save()

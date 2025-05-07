@@ -5,8 +5,8 @@ import useArgumentStore from '../stores/ArgumentStore';
 import useModalStore from '../stores/ModalStore';
 import ResizeTextArea from '../components/ResizeTextArea';
 import toast from 'react-hot-toast';
-import { MdDeleteOutline } from "react-icons/md";
-import { TbBinaryTree } from 'react-icons/tb';
+import { PiTreeStructureDuotone } from "react-icons/pi";
+import { AiTwotoneDelete } from "react-icons/ai";
 
 export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
     const { id, data } = node_state;
@@ -24,8 +24,8 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
 
     const [sisendTekst, setSisendTekst] = useState(content);
     const [isEditable, setIsEditable] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
+
 
     const onCreate = createArgument;
     const onRename = useCallback(() => {
@@ -93,59 +93,56 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
 
     return (
         <div
-            className={`text-updater-node shadow-md  m-0 p-0 border-none relative react-flow__node-default flex flex-col gap-1 rounded-none bg-gray-100 text-gray-800 shadow-gray-600 min-w-40 w-fit max-w-64 
-                ${isEditable ? "size-max p-2": ""}  transition-colors duration-200 
+            className={`text-updater-node shadow-sm p-2  p-x-4 m-0 border-none relative react-flow__node-default flex flex-col gap-1 rounded-none bg-gray-100 text-gray-800 shadow-gray-600 min-w-40 w-fit max-w-40 min-h-20 
+                ${isEditable ? "size-max p-2" : ""}  transition-colors duration-200 
                 ${isFlashing ? 'animate-radiate bg-yellow-300' : ''} 
                 `}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
         >
 
-            {isEditable ? (
-                <ResizeTextArea
-                    placeholder="Sisesta tekst"
-                    id="text"
-                    name="text"
-                    value={sisendTekst}
-                    onChange={onChange}
-                    onKeyDown={onKeyDown}
-                    onBlur={onBlur}
-                    className="nodrag p-4 h-fit overflow-y-none"
-                    autoFocus
-                />
-            ) : (
-                <div className='flex flex-col '>
-                    <div className={`flex ${!is_root ? "justify-between":"justify-end"} items-center bg-white p-1 shadow-md rounded-t-none`}>
 
-                        <div className={`flex flex-row justify-end `}>
-                            {/* <button className='px-1' onClick={onRename}>
-                                <div className='bg-yellow-400 rounded-xl w-3 h-3 hover:bg-yellow-200 focus:bg-yellow-600'></div>
-                            </button> */}
-                            {/* <button className='px-1' onClick={() => onCreate(id)}>
-                                <div className='bg-green-400 rounded-xl w-3 h-3 hover:bg-green-200 focus:bg-green-600'></div>
-                            </button>
-                            {!isTopic &&
-                                <button className='px-1' onClick={onDelete}>
-                                    <div className='bg-red-400 rounded-xl w-3 h-3 hover:bg-red-200 focus:bg-red-600'></div>
-                                </button>} */}
-                            <button className='px-1' onClick={() => onCreate(false, id)}>
-                                <TbBinaryTree className='w-6 h-6' />
-                            </button>
-                            {!is_root &&
-                            <button className='px-1' onClick={onDelete}>
-                                <MdDeleteOutline className='w-6 h-6'/>
+            <div className='flex flex-col '>
+                <div className={`flex ${!is_root ? "justify-between" : "justify-start"} items-center rounded-t-none`}>
+
+                    <div className={`flex flex-row justify-end `}>
+                        <button className='px-0' onClick={() => onCreate(false, id)}>
+                            <PiTreeStructureDuotone className='w-5 h-5 rotate-90' />
+                        </button>
+                        {!is_root &&
+                            <button className='px-0' onClick={onDelete}>
+                                <AiTwotoneDelete className='w-5 h-5' />
                             </button>}
-                            
-                        </div>
 
                     </div>
-                    <h1 onDoubleClick={onRename} onClick={onClick} className={`hover:cursor-pointer text-wrap break-words hyphens-auto p-4`} lang='et'>
-                        {content || "Redigeerimiseks tee topeltklõps"}
-                    </h1>
-
 
                 </div>
-            )}
+
+                {isEditable ? (
+                    <ResizeTextArea
+                        placeholder="Sisesta tekst"
+                        id="text"
+                        name="text"
+                        value={sisendTekst}
+                        onChange={onChange}
+                        onKeyDown={onKeyDown}
+                        onBlur={onBlur}
+                        className="nodrag p-2 h-fit overflow-y-none min-h-12"
+                        autoFocus
+                    />
+                ) : (
+                    <div className="flex items-center justify-center min-h-12 "> 
+                        <h1
+                            onDoubleClick={onRename}
+                            onClick={onClick}
+                            className="hover:cursor-pointer text-wrap break-words font-medium hyphens-auto pt-2"
+                            lang="et"
+                        >
+                            {content || "Redigeerimiseks tee topeltklõps"}
+                        </h1>
+                    </div>
+
+                )}
+
+            </div>
 
 
             <Handle type="target" className='invisible' position={Position.Top} id="target" />
@@ -159,15 +156,6 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
                 />
             </div>
 
-
-
-            {isHovered && (
-                <div className="absolute top-0 left-full ml-2 p-2 bg-gray-800 text-white rounded-md shadow-lg flex flex-wrap w-40 gap-x-2">
-                    <p><strong>Tipu ID:</strong> {id}</p>
-                    <p><strong>Tekst:</strong> {content || "Puudub"}</p>
-                    <p><strong>Juur:</strong> {is_root ? "true" : "false"}</p>
-                </div>
-            )}
         </div>
     );
 }

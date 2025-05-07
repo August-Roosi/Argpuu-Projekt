@@ -84,7 +84,7 @@ function Flow() {
   const results = filteredArguments(parentArgumentId ?? "");
 
   return (
-    <div style={{ height: '100%' }} className='bg-gray-700 bg-sky-50'>
+    <div style={{ height: '100%' }} className='bg-gray-700'>
       <Toaster position="top-center" reverseOrder={false} />
 
       <ReactFlow
@@ -98,6 +98,8 @@ function Flow() {
         onConnect={onConnect}
         defaultEdgeOptions={{ type: "smoothstep" }}
         fitView
+        zoomOnScroll={false}  
+        panOnScroll={true}      
         fitViewOptions={{ padding: 0.3 }}
       >
         <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} />
