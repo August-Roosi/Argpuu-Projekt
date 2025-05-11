@@ -10,6 +10,10 @@ class ArgumentMap(models.Model):
     description = models.CharField(max_length=255, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="argument_trees")
     contributors = models.ManyToManyField(User, related_name="collaborations", blank=True)
+    is_public = models.BooleanField(default=False)
+    is_publicly_editable = models.BooleanField(default=False)
+    likes = models.ManyToManyField(User, related_name="liked_argument_maps", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_argument_maps", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  
     updated_at = models.DateTimeField(auto_now=True)  
 

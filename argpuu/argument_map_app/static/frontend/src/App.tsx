@@ -42,7 +42,7 @@ const selector = (state: AppState) => ({
 function Flow() {
 
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, connectArguments, createArgumentWithConnection, createSiblingArgument } = useArgumentStore(useShallow(selector),);
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, createArgumentWithConnection, createSiblingArgument } = useArgumentStore(useShallow(selector),);
   const { isOpen, isSibling, nodeId: parentArgumentId, closeModal } = useModalStore();
   const { searchTerm,
     setSearchTerm,
@@ -53,6 +53,13 @@ function Flow() {
 
   const modalRef = useRef<HTMLDivElement>(null);
 
+
+
+  const handleClose = () => {
+    setSearchTerm("");
+    closeModal();
+  };
+  
   useEffect(() => {
     console.log("Flow component has mounted.");
     console.log("Argument Map ID:", argumentMapId);
@@ -64,7 +71,7 @@ function Flow() {
     } 
     function handleClickOutside(event: MouseEvent) {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        closeModal();
+        handleClose();
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -111,7 +118,7 @@ function Flow() {
             <div className="bg-gray-200 rounded-none w-[600px] max-h-[40vh] overflow-hidden shadow-lg" ref={modalRef}>
               <div className="flex-row justify-between items-center p-1 bg-gray-50">
                 <div className='flex justify-end'>
-                  <button className='px-1' onClick={closeModal}>
+                  <button className='px-1' onClick={()=> handleClose()}>
                     <IoMdClose />
                   </button>
                 </div>
@@ -135,15 +142,15 @@ function Flow() {
                       }
                       let result;
                       if (isSibling){
-                        result = await createSiblingArgument(parentArgumentId, searchTerm);
+                        result = await createSiblingArgument(parentArgumentId, {content: searchTerm});
                       } else {
-                        result = await createArgumentWithConnection(parentArgumentId, searchTerm);
+                        result = await createArgumentWithConnection(parentArgumentId, {content: searchTerm});
                       }
                       if (!result) {
                         toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                         return;
                       }
-                      closeModal();
+                      handleClose();
                       toast.success("Argument loodud!");
                     }
 
@@ -178,12 +185,17 @@ function Flow() {
                           toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                           return;
                         }
-                        const result = await connectArguments(parentArgumentId, selectedArgument.id);
+                        let result
+                        if (isSibling){
+                          result = await createSiblingArgument(parentArgumentId, {newArgumentId: selectedArgument.id});
+                        } else { 
+                          result = await createArgumentWithConnection(parentArgumentId, {newArgumentId: selectedArgument.id});
+                        }
                         if (!result) {
                           toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                           return;
                         }
-                        closeModal();
+                        handleClose
                         toast.success("Argument kopeeritud teisest kaardist!");
 
                       }}

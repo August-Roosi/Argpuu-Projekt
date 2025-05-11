@@ -1,0 +1,74 @@
+
+<div class="fixed top-0 left-0 h-screen z-40 group flex flex-col items-start bg-white shadow transition-all duration-300 w-12 hover:w-60 overflow-hidden rounded-r-lg">
+
+    <div class="h-40"></div>
+    <a href="{% url 'view_home' %}" z-40 group
+    class="{% if active == 'home' %}bg-gray-200{% endif %} w-full transition" >
+        <button class="flex items-center w-full px-4 py-3 hover:bg-gray-100 ">
+            <span class="material-symbols-outlined">
+                home
+            </span>
+            <span class="ml-3 text-sm text-gray-700 whitespace-nowrap opacity-100 group-hover:opacity-100 transition duration-100">
+                
+                Kodu
+            </span>
+        </button>
+    </a>
+    {% if request.user.is_authenticated %}
+
+    <div class="h-5"></div>
+
+    <a href="{% url 'view_user_argument_maps' %}" 
+    class="{% if active == 'user' %}bg-gray-200{% endif %} w-full transition" >
+        <button class="flex items-center w-full px-4 py-3 hover:bg-gray-100 ">
+            <span class="material-symbols-outlined">
+                dashboard
+            </span>
+            <span class="ml-3 text-sm text-gray-700 whitespace-nowrap opacity-100 group-hover:opacity-100 transition duration-100">
+            
+                Sinu argumendikaardid
+            </span>
+        </button>
+    </a>
+    
+    <div class="h-5"></div>
+    
+    <a href="{% url 'view_all_argument_maps' %}" class="{% if active == 'all' %}bg-gray-200{% endif %} w-full">
+        <button class="flex items-center w-full px-4 py-3 hover:bg-gray-100 transition ">
+            <span class="material-symbols-outlined">
+                public
+            </span>
+            <span class="ml-3 text-sm text-gray-700 whitespace-nowrap opacity-100 group-hover:opacity-100 transition-opacity duration-300">
+                Kõikide argumendikaardid
+            </span>
+        </button>
+    </a>
+    {% endif %}
+    
+
+
+    <div class="mt-auto w-full mb-4">
+        {% if request.user.is_authenticated %}
+            <form method="POST" action="{% url 'logout' %}" class="w-full">
+                {% csrf_token %}
+                <button type="submit" class="flex items-center w-full px-4 py-3 hover:bg-gray-100 transition">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span class="ml-3 text-sm text-gray-700 whitespace-nowrap opacity-100 group-hover:opacity-100 transition-opacity duration-300">
+                        Logi välja
+                    </span>
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" class="w-full">
+                <button class="flex items-center w-full px-4 py-3 hover:bg-gray-100 transition">
+                    <span class="material-symbols-outlined">login</span>
+                    <span class="ml-3 text-sm text-gray-700 whitespace-nowrap opacity-100 group-hover:opacity-100 transition-opacity duration-300">
+                        Logi sisse
+                    </span>
+                </button>
+            </a>
+        {% endif %}
+    </div>
+    
+    
+</div>

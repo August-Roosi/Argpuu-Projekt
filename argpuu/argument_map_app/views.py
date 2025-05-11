@@ -13,9 +13,18 @@ from rest_framework.views import APIView
 from django.db import transaction, models
 from .utils.create_log import create_log
 from .utils.deserialize_connection_data import deserialize_connection_data
+from rest_framework.decorators import api_view
+from django.contrib.auth import logout, authenticate, login
+from django.contrib import messages
+from .forms import CustomSignupForm
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+
+def view_home(request):
+    return render(request, "home.html")
 
 @login_required
-def view_argument_map(request, id=None):
+def view_user_argument_maps(request, id=None):
     if id:
         # Specific argument map view
         argument_map = get_object_or_404(ArgumentMap, id=id)
@@ -23,19 +32,51 @@ def view_argument_map(request, id=None):
     else:
         # List view / create form
         argument_maps = ArgumentMap.objects.filter(author=request.user).order_by('-created_at')
-        return render(request, "list_argument_maps.html", {"argument_maps": argument_maps})
+        return render(request, "list_user_argument_maps.html", {"argument_maps": argument_maps})
+
+
+@login_required
+def view_all_argument_maps(request):
+    argument_maps = ArgumentMap.objects.filter(is_public=True).order_by('-created_at')
+
+    for map in argument_maps:
+        map.likes_count = map.likes.count()  
+        map.dislikes_count = map.dislikes.count()  
+        map.total_likes = map.likes_count - map.dislikes_count  
+        map.user_reaction = "neutral"   
+
+        if map.likes.filter(id=request.user.id).exists():
+            map.user_reaction = "liked"  
+        elif map.dislikes.filter(id=request.user.id).exists():
+            map.user_reaction = "disliked"  
+
+    return render(request, "list_all_argument_maps.html", {"argument_maps": argument_maps})
+
 
 @login_required
 def create_argument_map(request):
     if request.method == "POST":
         title = request.POST.get('title')
         description = request.POST.get('description')
+        is_public = request.POST.get('is_public')
+        is_publicly_editable = request.POST.get('is_publicly_editable')
+    
+        if is_public == "on":
+            is_public = True
+        else:
+            is_public = False
+        if is_publicly_editable == "on":
+            is_publicly_editable = True
+        else:
+            is_publicly_editable = False
         
         
         argument_map = ArgumentMap.objects.create(
             title=title,
             description=description,
-            author=request.user  
+            author=request.user,
+            is_public=is_public,
+            is_publicly_editable=is_publicly_editable,
         )
         Argument.objects.create(
             content="See on sinu juurargument, seda ei saa kustutada aga et muuta tee topelt klõps!",
@@ -46,7 +87,7 @@ def create_argument_map(request):
         
         return redirect('view_argument_map', id=argument_map.id)
     
-    return redirect('view_argument_maps')
+    return redirect('view_user_argument_maps')
 
 @login_required
 def delete_argument_map(request, id):
@@ -54,7 +95,99 @@ def delete_argument_map(request, id):
         argument_map = get_object_or_404(ArgumentMap, id=id)
         if argument_map.author == request.user:  
             argument_map.delete()
-    return redirect('view_argument_maps') 
+    return redirect('view_user_argument_maps') 
+
+@api_view(['POST'])
+@login_required
+def react_to_argument_map(request, id):
+    """Toggle like/dislike/neutral on an argument map"""
+    try:
+        argument_map = ArgumentMap.objects.get(id=id)
+    except ArgumentMap.DoesNotExist:
+        return Response({"detail": "Argument map not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    user = request.user
+    action = request.data.get("action")
+
+    if action == "like":
+        if argument_map.likes.filter(id=user.id).exists():
+            # User already liked, remove like
+            argument_map.likes.remove(user)
+            action = "neutral"
+        else:
+            argument_map.likes.add(user)
+            
+        if argument_map.dislikes.filter(id=user.id).exists():
+            # User disliked before, remove dislike
+            argument_map.dislikes.remove(user)
+    elif action == "dislike":
+        if argument_map.dislikes.filter(id=user.id).exists():
+            # User already disliked, remove dislike
+            argument_map.dislikes.remove(user)
+            action = "neutral"
+        else: 
+            argument_map.dislikes.add(user)
+            
+        if argument_map.likes.filter(id=user.id).exists():
+            # User liked before, remove like
+            argument_map.likes.remove(user)
+    else:
+        return Response({"detail": "Invalid action. Must be 'like' or 'dislike'."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        "action": action,
+        "total_likes": argument_map.likes.count() - argument_map.dislikes.count(),
+        "user_likes": argument_map.likes.filter(id=user.id).exists(),
+        "user_dislikes": argument_map.dislikes.filter(id=user.id).exists(),
+        
+    }, status=status.HTTP_200_OK)
+
+def view_logout(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('view_home')  
+
+def view_login(request):
+    next_url = request.GET.get('next', 'view_home') 
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect(request.POST.get('next', next_url))
+        else:
+            messages.error(request, "Vale kasutajanimi või parool.")
+
+    return render(request, 'login.html', {'next': next_url})
+
+
+
+def view_signup(request):
+    if request.method == "POST":
+        form = CustomSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("view_home") 
+        else:
+            print(form.errors)
+    
+            return render(request, "signup.html", {"form": form})
+    else:
+        form = CustomSignupForm()
+    return render(request, "signup.html", {"form": form})
+
+def view_check_username(request):
+    username = request.GET.get("username", "")
+    exists = User.objects.filter(username=username).exists()
+    return JsonResponse({"exists": exists})
+
+
+
 
 
 class ArgumentViewSet(viewsets.ModelViewSet):
@@ -91,11 +224,21 @@ class ArgumentViewSet(viewsets.ModelViewSet):
 
         # Exclude specific argument map
         exclude_map_id = self.request.query_params.get('exclude_argument_map')
-        if exclude_map_id is not None:  
-            if exclude_map_id.isdigit():
-                queryset = queryset.exclude(argument_map__id=int(exclude_map_id))
-            else:
-                queryset = queryset.none() 
+        if exclude_map_id is not None and exclude_map_id.isdigit():
+            exclude_map_id = int(exclude_map_id)
+
+            operators = Operator.objects.filter(argument_map=exclude_map_id)
+
+            from itertools import chain
+            argument_ids_to_exclude = list(chain.from_iterable(
+                operator.arguments.values_list('id', flat=True) for operator in operators
+            ))
+            
+            queryset = queryset.exclude(
+            Q(id__in=argument_ids_to_exclude) |
+            Q(argument_map__isnull=False)
+                )
+
 
         # Filter by specific argument IDs
         argument_ids = self.request.query_params.get('ids')

@@ -380,12 +380,15 @@ const useArgumentStore = create<AppState>((set, get) => ({
 
   
 
-  createArgumentWithConnection: async (parentArgumentId: string, content: string): Promise<boolean> => {
+  createArgumentWithConnection: async (parentArgumentId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}): Promise<boolean> => {
     const actionGroupId = crypto.randomUUID();
 
-  
-
-    const newNode = await get().createArgument(content, actionGroupId);
+    let newNode;
+    if (!content) {
+      newNode = (await get().getArguments(newArgumentId))[0];
+    } else {
+      newNode = await get().createArgument(content, actionGroupId);
+    }
     if (!newNode) return false;
 
     const newOperator = await get().createOperator(actionGroupId, newNode.id)
@@ -400,7 +403,6 @@ const useArgumentStore = create<AppState>((set, get) => ({
       [...get().edges, newEdge]
     );
 
-    console.log("positi", positionedNodes)
     set({
       nodes: positionedNodes,
       edges: [...get().edges, newEdge],
@@ -485,24 +487,29 @@ const useArgumentStore = create<AppState>((set, get) => ({
       return null;
     }
   },
-  createSiblingArgument: async (operatorId: string, content: string): Promise<boolean> => {
+  createSiblingArgument: async (operatorId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}): Promise<boolean> => {
     const csrfToken = getCSRFToken();
     const actionGroupId = crypto.randomUUID();
-  
-    const newNode = await get().createArgument(content, actionGroupId);
-    if (!newNode) return false;
-    console.log(newNode)
-    console.log(operatorId)
-    const operatorNode = get().nodes.find(node => node.id === operatorId && node.type === 'operator-node');
-    if (!operatorNode) return false;
-    console.log(operatorNode)
-
     
-    const currentArgumentIds = Array.isArray((operatorNode.data as { argument_ids: string[] }).argument_ids)
-      ? Array.isArray((operatorNode.data as { argument_ids: string[] }).argument_ids)
-        ? (operatorNode.data as { argument_ids: string[] }).argument_ids
-        : []
-      : [];
+    let newNode;
+    if (!content) {
+      newNode = (await get().getArguments(newArgumentId))[0];
+    } else { 
+      newNode = await get().createArgument(content, actionGroupId);
+    }
+    if (!newNode) return false;
+
+
+    const operatorNode = get().nodes.find(
+      node => node.id === operatorId && node.type === 'operator-node'
+    ) as OperatorNodes | undefined;
+    
+    if (!operatorNode) {
+      console.error("Operator node not found for the given ID:", operatorId);
+      return false;
+    }
+    
+    const currentArgumentIds = operatorNode.data.argument_ids;
   
     const updatedArgumentIds = [...currentArgumentIds, newNode.id];
     console.log("updatedids",updatedArgumentIds)
@@ -554,58 +561,10 @@ const useArgumentStore = create<AppState>((set, get) => ({
   
   
 
-  connectArguments: async (sourceId: string, targetId: string, actionGroupId: string = crypto.randomUUID() ) => {
+  connectArguments: async (sourceArgumentId: string, targetOperatorId: string, actionGroupId: string = crypto.randomUUID() ) => {
 
     const csrfToken = getCSRFToken();
-    const argumentMapId = get().argumentMapId;
 
-    const ensureNodeInMap = async (nodeId: string) => {
-      const nodeExists = get().nodes.some((node) => node.id === nodeId);
-
-      if (!nodeExists) {
-        try {
-          const [fetchedNode] = await get().getArguments(nodeId);
-
-          if (!fetchedNode) {
-            console.warn(`Node ${nodeId} not found in backend`);
-            return;
-          }
-
-          const updatedMapIds = [
-            ...(fetchedNode.data.argument_map || []),
-            argumentMapId,
-          ];
-
-          const csrfToken = getCSRFToken();
-          const response = await fetch(`/api/arguments/${nodeId}/`, {
-            method: 'PATCH',
-            headers: new Headers({
-              'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken || '',
-              'X-Action-Group-Id': actionGroupId,
-              'X-Argument-Map-Id': get().argumentMapId,
-
-            }),
-            credentials: 'include',
-            body: JSON.stringify({
-              argument_map: updatedMapIds,
-            }),
-          });
-
-          if (!response.ok) {
-            console.warn(`Could not append map ID to node ${nodeId}:`, response.status);
-          } else {
-            console.log(`Map ID appended to node ${nodeId} successfully.`);
-          }
-        } catch (err) {
-          console.error(`Failed to patch node ${nodeId}:`, err);
-        }
-      }
-
-    };
-
-    await ensureNodeInMap(sourceId);
-    console.log("Argument map ID:!", argumentMapId);
     try {
       const edgeResponse = await fetch('/api/connections/', {
         method: 'POST',
@@ -618,8 +577,8 @@ const useArgumentStore = create<AppState>((set, get) => ({
         },
         credentials: 'include',
         body: JSON.stringify({
-          source: sourceId,
-          target: targetId,
+          source: sourceArgumentId,
+          target: targetOperatorId,
           data: { stance: 'undefined' },
         }),
       });

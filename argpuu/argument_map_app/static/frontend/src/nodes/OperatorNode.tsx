@@ -44,7 +44,7 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
 
 
     const charsPerLine = 35;
-    const lineHeightRem = 1.65;
+    const lineHeightRem = 1.45;
     const baseHeightRem = 6;
 
     const lines = Math.ceil(maxContentLength / charsPerLine);

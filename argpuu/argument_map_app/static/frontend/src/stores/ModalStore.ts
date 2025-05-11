@@ -1,4 +1,3 @@
-// stores/ModalStore.ts
 import { create } from 'zustand';
 
 interface ModalState {
@@ -7,9 +6,12 @@ interface ModalState {
     nodeId: string | null;
     openModal: (isSibling: boolean, id: string) => void;
     closeModal: () => void;
+
 }
 
 const useModalStore = create<ModalState>((set) => ({
+    
+
     isOpen: false,
     isSibling: false,
     nodeId: null,

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+    <h2 class="text-2xl font-bold mb-4">Logi sisse</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <label class="block mb-2">Kasutajanimi:</label>
+        <input type="text" name="username" autocomplete="username" class="w-full mb-4 p-2 border rounded">
+
+
+        <label class="block mb-2">Parool:</label>
+        <input type="password" autocomplete="current-password" name="password" class="w-full mb-4 p-2 border rounded">
+
+        {% if messages %}
+        <div class="mt-4 text-red-500">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+            Logi sisse
+        </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-gray-600">
+        Pole veel kontot?
+        <a href="{% url 'signup' %}" class="text-blue-500 hover:underline">Loo konto</a>
+    </p>
+</div>
+{% endblock %}

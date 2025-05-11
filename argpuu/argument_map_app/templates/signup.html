@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+    <h2 class="text-2xl font-bold mb-4">Loo konto</h2>
+
+    <form method="post" onsubmit="return validatePasswords()">
+        {% csrf_token %}
+
+        <label class="block mb-2">Kasutajanimi:</label>
+        <input type="text" autocomplete="username" name="username" id="username" required class="w-full mb-4 p-2 border rounded">
+        <p id="username-feedback" class="text-sm text-red-500 hidden">See kasutajanimi on juba võetud.</p>
+
+        {% if form.username.errors %}
+            <div class="text-red-500 text-sm">
+                {% for error in form.username.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label class="block mb-2">E-post:</label>
+        <input type="email" autocomplete="email" name="email" required class="w-full mb-4 p-2 border rounded">
+
+        {% if form.email.errors %}
+            <div class="text-red-500 text-sm">
+                {% for error in form.email.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label class="block mb-2">Parool:</label>
+        <input type="password" autocomplete="new-password" id="password1" name="password1" required class="w-full mb-4 p-2 border rounded">
+
+        <label class="block mb-2">Kinnita parool:</label>
+        <input type="password" autocomplete="new-password" id="password2" name="password2" required class="w-full mb-4 p-2 border rounded">
+
+        {% if form.password.errors %}
+            <div class="text-red-500 text-sm">
+                {% for error in form.password.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <p id="password-error" class="text-red-500 text-sm mb-2 hidden">Paroolid ei kattu.</p>
+
+        <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">
+            Registreeru
+        </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-gray-600">
+        Juba konto olemas?
+        <a href="{% url 'login' %}" class="text-blue-500 hover:underline">Logi sisse</a>
+    </p>
+</div>
+
+<script>
+    function validatePasswords() {
+        const pass1 = document.getElementById("password1").value;
+        const pass2 = document.getElementById("password2").value;
+        const errorMsg = document.getElementById("password-error");
+
+        if (pass1 !== pass2) {
+            errorMsg.classList.remove("hidden");
+            return false;  
+        } else {
+            errorMsg.classList.add("hidden");
+            return true;
+        }
+    }
+
+    document.getElementById("username").addEventListener("input", function () {
+        const username = this.value;
+        const feedback = document.getElementById("username-feedback");
+    
+        if (username.length === 0) {
+            feedback.classList.add("hidden");
+            return;
+        }
+    
+        fetch(`/check-username/?username=${encodeURIComponent(username)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.exists) {
+                    feedback.classList.remove("hidden");
+                } else {
+                    feedback.classList.add("hidden");
+                }
+            });
+    });
+</script>
+{% endblock %}

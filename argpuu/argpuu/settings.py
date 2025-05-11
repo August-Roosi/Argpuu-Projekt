@@ -33,7 +33,9 @@ DEBUG = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = []
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = '/login/'
+
+
 
 
 # Application definition

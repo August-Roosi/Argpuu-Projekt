@@ -13,10 +13,11 @@
     </div>
 
     <script>
-        window.argumentMapsViewUrl = "{% url 'view_argument_maps' %}";
+        window.argumentMapsViewUrl = "{% url 'view_user_argument_maps' %}";
         window.argumentMapId = "{{ argument_map.id }}";
         window.argumentMapAuthor = "{{ argument_map.author }}";
         window.argumentMapTitle = "{{ argument_map.title }}"; 
+        window.isReadOnly = "{{ is_read_only|lower }}";
     </script>
 
     <script type="module" src="{% static 'assets/index.js' %}"></script>

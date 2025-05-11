@@ -33,10 +33,10 @@ export type AppState = {
     createArgument: (content: string, actionGroupId: string) => Promise<AppNode | null>;
     createOperator: (actionGroupId: string, argumentId: string) => Promise<AppNode | null>;
     connectArguments: (sourceId: string, targetId: string, actionGroupId?: string ) => Promise<Edge | null>;
-    createArgumentWithConnection: (parentNodeId: string, content: string) => Promise<boolean>;
+    createArgumentWithConnection: (parentNodeId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}) => Promise<boolean>;
+    createSiblingArgument: (operatorId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}) => Promise<boolean>;
     getArguments: (id?: string) => Promise<ArgumentNodes[]>;
     getMap: (id: string) => void;
-    createSiblingArgument: (operatorId: string, content: string) => Promise<boolean>;
 
     switchStance: (nodeId: string) => Promise<[0 | 1, string]>;
     undo: () => Promise<[0 | 1, string]>;
