@@ -27,15 +27,39 @@
         {% for map in argument_maps %}
             <li class="p-4 bg-white shadow rounded-lg hover:shadow-md transition duration-150">
                 <div class="flex justify-between items-center">
-                    <div>
-                        <a href="{% url 'view_argument_map' map.id %}" class="text-blue-600 hover:underline font-medium">
-                            {{ map.title }}
-                        </a> 
-                        {% if map.description %}
-                            <p class="text-gray-500 text-sm mt-1">Kirjeldus: {{ map.description }}</p>
-                        {% endif %}
+                    <div class="flex justify-start space-x-4">
+
+                        <div>
+                            <span 
+                                class="material-symbols-outlined cursor-pointer"
+                                id="toggle-public-{{ map.id }}"
+                                title="{{ map.is_public|yesno:'Kaart on avalik,Kaart on privaatne' }}"
+                                onclick="togglePublic({{ map.id }})"
+                            >
+                                {{ map.is_public|yesno:'public,public_off' }}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <a href="{% url 'view_argument_map' map.id %}" class="text-blue-600 hover:underline font-medium">
+                                {{ map.title }}
+                            </a> 
+                            {% if map.description %}
+                                <p class="text-gray-500 text-sm mt-1">Kirjeldus: {{ map.description }}</p>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="flex space-x-2">
+                        <div>
+                            <span 
+                            class="material-symbols-outlined cursor-pointer"
+                            id="toggle-editable-{{ map.id }}"
+                            title="{{ map.is_publicly_editable|yesno:'Kaarti võib iga inimene muuta,Kaarti saab muuta ainult autor' }}"
+                            onclick="togglePubliclyEditable({{ map.id }})"
+                            >
+                                {{ map.is_publicly_editable|yesno:'edit,edit_off' }}
+                            </span>
+                        </div>
                         <form method="POST" action="{% url 'delete_argument_map' map.id %}" onsubmit="return confirm('Kas oled kindel, et soovid kustutada?');">
                             {% csrf_token %}
                             <button type="submit" class="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition duration-150">
@@ -157,6 +181,50 @@
         } else {
             editableCheckboxDiv.style.display = "none";
         }
+    }
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    function togglePublic(mapId) {
+        fetch(`/toggle_public/${mapId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const icon = document.getElementById(`toggle-public-${mapId}`);
+            if (data.success) {
+                icon.textContent = data.is_public ? 'public' : 'public_off';
+                icon.title = data.is_public ? 'Kaart on avalik' : 'Kaart on privaatne';
+            }
+        });
+    }
+    function togglePubliclyEditable(mapId) {
+
+        fetch(`/toggle_publicly_editable/${mapId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            const icon = document.getElementById(`toggle-editable-${mapId}`);
+            if (data.success) {
+                icon.textContent = data.is_publicly_editable ? 'edit' : 'edit_off';
+                icon.title = data.is_publicly_editable
+                    ? 'Kaarti võib iga inimene muuta'
+                    : 'Kaarti saab muuta ainult autor';
+            } else {
+                alert('Ei saanud muuta. Sul peab olema õigus.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
     }
 
 

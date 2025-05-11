@@ -44,7 +44,7 @@ def view_user_argument_maps(request, id=None):
     else:
         # List view / create form
         argument_maps = ArgumentMap.objects.filter(
-            Q(is_publicly_editable=True) | Q(author=request.user)
+            author=request.user
         ).order_by('-created_at')
         return render(request, "list_user_argument_maps.html", {"argument_maps": argument_maps})
 
@@ -63,6 +63,8 @@ def view_all_argument_maps(request):
             map.user_reaction = "liked"  
         elif map.dislikes.filter(id=request.user.id).exists():
             map.user_reaction = "disliked"  
+            
+    argument_maps = sorted(argument_maps, key=lambda x: x.total_likes, reverse=True)
 
     return render(request, "list_all_argument_maps.html", {"argument_maps": argument_maps})
 
@@ -156,6 +158,32 @@ def react_to_argument_map(request, id):
         "user_dislikes": argument_map.dislikes.filter(id=user.id).exists(),
         
     }, status=status.HTTP_200_OK)
+    
+    
+@api_view(['POST'])
+@login_required
+def toggle_publicly_editable(request, map_id):
+    try:
+        argument_map = ArgumentMap.objects.get(id=map_id, author=request.user)
+        argument_map.is_publicly_editable = not argument_map.is_publicly_editable
+        argument_map.save()
+        return JsonResponse({
+            "success": True,
+            "is_publicly_editable": argument_map.is_publicly_editable
+        })
+    except ArgumentMap.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Kaarti ei leitud või sul puudub õigus."})
+
+@api_view(['POST'])
+@login_required
+def toggle_public(request, map_id):
+    try:
+        argument_map = ArgumentMap.objects.get(id=map_id, author=request.user)
+        argument_map.is_public = not argument_map.is_public
+        argument_map.save()
+        return JsonResponse({"success": True, "is_public": argument_map.is_public})
+    except ArgumentMap.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Kaart ei leitud või puudub luba."}, status=403)
 
 def view_logout(request):
     if request.method == 'POST':
@@ -363,6 +391,8 @@ class ConnectionViewSet(viewsets.ModelViewSet):
         argument_map_id = request.headers.get('X-Argument-Map-Id')
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
 
+        if argument_map.author is not self.context['request'].user:
+            argument_map.contributors.add(self.context['request'].user)
 
         create_log(
             user=request.user,

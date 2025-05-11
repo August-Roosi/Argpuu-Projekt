@@ -68,7 +68,6 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
 
                 <button className={`px-1 h-full hover:bg-white/30 basis-2 tr-rounded-lg! br-rounded-lg!`} onClick={() => onCreate(true, id)}>
                     <div className='flex flex-row justify-center'>
-                        {/* <VscGroupByRefType className='w-4 h-4 rotate-90' /> */}
                         <IoMdAddCircleOutline className='w-4 h-4 rotate-90' />
 
                     </div>

@@ -25,11 +25,11 @@
                             <div>
                                 {% if map.is_publicly_editable %}
                                     <span class="material-symbols-outlined" title="Kaarti võib iga inimene muuta">
-                                        lock_open_right
+                                        edit
                                     </span>
                                 {% else %}
                                     <span class="material-symbols-outlined" title="Kaarti saab muuta ainult autor">
-                                        lock
+                                        edit_off
                                     </span>
                                 {% endif %}
                             </div>
@@ -43,6 +43,15 @@
                                     <p class="text-gray-500 text-sm mt-1">Kirjeldus: {{ map.description }}</p>
                                 {% endif %}
                                 <p class="text-gray-500 text-sm mt-1">Autor: {{ map.author.username }}</p>
+                                {% if map.contributors.all %}
+                                    <p class="text-gray-500 text-sm mt-1">Kaardi koostajad: 
+                                        {% for contributor in map.contributors.all|slice:":3" %}
+                                            {{ contributor.username }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                        {% if map.contributors.count > 3 %}, ...{% endif %}
+                                    </p>
+                                {% endif %}
+                            
     
                             </div>
 
@@ -53,7 +62,7 @@
                         <div class="flex space-x-4">
                             <div class="flex space-x-1 group transition duration-300 h-full">
                                 <!-- Like button -->
-                                <button class="react-btn {% if map.user_reaction == 'liked' %}filled-icon text-green-500{% endif %}" id="like-btn" data-action="like" data-map-id="{{ map.id }}">
+                                <button class="react-btn {% if map.user_reaction == 'liked' %}filled-icon text-green-500{% endif %}" id="like-btn-{{map.id}}" data-action="like" data-map-id="{{ map.id }}">
                                     <span class="material-symbols-outlined ">
                                         thumb_up
                                     </span>
@@ -65,7 +74,7 @@
                                 </p>
                         
                                 <!-- Dislike button -->
-                                <button class="react-btn {% if map.user_reaction == 'disliked' %}filled-icon text-red-500{% endif %}" id="dislike-btn" data-action="dislike" data-map-id="{{ map.id }}">
+                                <button class="react-btn {% if map.user_reaction == 'disliked' %}filled-icon text-red-500{% endif %}" id="dislike-btn-{{map.id}}" data-action="dislike" data-map-id="{{ map.id }}">
                                     <span class="material-symbols-outlined ">
                                         thumb_down
                                     </span>
@@ -132,14 +141,14 @@
                     if (response.ok) {
                         document.getElementById(`likes-${mapId}`).innerText = data.total_likes; 
                         if (data.action === "like") {
-                            document.getElementById('like-btn').classList.add("text-green-500");
-                            document.getElementById('dislike-btn').classList.remove("text-red-500");
+                            document.getElementById(`like-btn-${mapId}`).classList.add("text-green-500");
+                            document.getElementById(`dislike-btn-${mapId}`).classList.remove("text-red-500");
                         } else if (data.action === "dislike") {
-                            document.getElementById('dislike-btn').classList.add("text-red-500");
-                            document.getElementById('like-btn').classList.remove("text-green-500");
+                            document.getElementById(`dislike-btn-${mapId}`).classList.add("text-red-500");
+                            document.getElementById(`like-btn-${mapId}`).classList.remove("text-green-500");
                         } else if (data.action === "neutral") {
-                            document.getElementById('like-btn').classList.remove("text-green-500");
-                            document.getElementById('dislike-btn').classList.remove("text-red-500");
+                            document.getElementById(`like-btn-${mapId}`).classList.remove("text-green-500");
+                            document.getElementById(`dislike-btn-${mapId}`).classList.remove("text-red-500");
                         }
                     } else {
                         alert(data.detail || "Error reacting to map.");

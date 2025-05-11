@@ -49,6 +49,10 @@ class ArgumentSerializer(serializers.ModelSerializer):
         argument_map_id = self.context['argument_map_id']
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
         
+        if argument_map.author is not self.context['request'].user:
+            argument_map.contributors.add(self.context['request'].user)
+
+        
         instance.save()
         create_log(
             user=self.context['request'].user,
@@ -85,6 +89,10 @@ class ConnectionSerializer(serializers.ModelSerializer):
         argument_map_id = self.context['argument_map_id']
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
 
+        if argument_map.author is not self.context['request'].user:
+            argument_map.contributors.add(self.context['request'].user)
+
+        
         stance = data.get('stance', 'undefined') 
         explanation = data.get('explanation', '')
         connection = Connection.objects.create(
@@ -126,6 +134,10 @@ class ConnectionSerializer(serializers.ModelSerializer):
 
         argument_map_id = self.context['argument_map_id']
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
+        
+        if argument_map.author is not self.context['request'].user:
+            argument_map.contributors.add(self.context['request'].user)
+
 
         instance.save()
         create_log(
@@ -183,6 +195,12 @@ class OperatorSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request_data = self.initial_data.get('data', {})
         argument_ids = request_data.get('argument_ids')
+        argument_map_id = self.context['argument_map_id']
+        argument_map = ArgumentMap.objects.get(id=argument_map_id)
+        
+        if argument_map.author is not self.context['request'].user:
+            argument_map.contributors.add(self.context['request'].user)
+
 
         arguments = Argument.objects.filter(id__in=argument_ids)
         instance.arguments.set(arguments)
