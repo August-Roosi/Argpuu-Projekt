@@ -36,7 +36,6 @@ def static_from_manifest(asset_name):
             manifest = json.load(f)
         
         # Look up the asset name in the manifest
-        print("hei")
         asset_path = None
         if asset_name == 'index.css':
             css_files = manifest.get('index.html', {}).get('css', [])

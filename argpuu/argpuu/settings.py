@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY =  os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', '0') == '1'
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = []
@@ -96,13 +96,14 @@ DATABASES = {
     #     "ENGINE": "django.db.backends.sqlite3",
     #     "NAME": BASE_DIR / "db.sqlite3",
     # }
+
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'argpuu',
-        'USER': 'august',
-        'PASSWORD': 'Kommikarp3',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'argpuu'),
+        'USER': os.getenv('DB_USER', 'august'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -145,6 +146,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'argument_map_app/static/frontend/dist',
 ]
+STATIC_ROOT = '/vol/web/staticfiles'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

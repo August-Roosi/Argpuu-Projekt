@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import ArgumentViewSet, ConnectionViewSet, UndoActionGroupView, OperatorViewSet
-
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = DefaultRouter()
 router.register(r'arguments', ArgumentViewSet)
@@ -30,3 +31,4 @@ urlpatterns = [
     path('api/undo/', UndoActionGroupView.as_view(), name='undo'),
     path('api/', include(router.urls)),
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
