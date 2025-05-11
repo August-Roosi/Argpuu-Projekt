@@ -6,5 +6,6 @@ declare global {
         argumentMapsViewUrl: string;
         argumentMapTitle: string;
         argumentMapAuthor: string;
+        isArgumentMapReadOnly: boolean;
     }
 }

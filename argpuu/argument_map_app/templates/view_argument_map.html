@@ -17,7 +17,9 @@
         window.argumentMapId = "{{ argument_map.id }}";
         window.argumentMapAuthor = "{{ argument_map.author }}";
         window.argumentMapTitle = "{{ argument_map.title }}"; 
-        window.isReadOnly = "{{ is_read_only|lower }}";
+        window.isArgumentMapReadOnly = {{ is_read_only|yesno:"true,false" }};
+
+        
     </script>
 
     <script type="module" src="{% static 'assets/index.js' %}"></script>

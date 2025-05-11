@@ -20,6 +20,7 @@ const argumentMapId = window.argumentMapId;
 const argumentMapsViewUrl = window.argumentMapsViewUrl;
 const argumentMapTitle = window.argumentMapTitle;
 const argumentMapAuthor = window.argumentMapAuthor;
+const isArgumentMapReadOnly = window.isArgumentMapReadOnly;
 
 
 const selector = (state: AppState) => ({
@@ -64,7 +65,7 @@ function Flow() {
     console.log("Flow component has mounted.");
     console.log("Argument Map ID:", argumentMapId);
     if (argumentMapId && !isOpen) {
-      getMap(argumentMapId);
+      getMap(argumentMapId, isArgumentMapReadOnly);
     }
     if (isOpen) {
       getArgumentsFromApi(argumentMapId);
@@ -74,6 +75,7 @@ function Flow() {
         handleClose();
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -132,6 +134,10 @@ function Flow() {
                   onKeyDown={async (e) => {
 
                     if (e.key === "Enter") {
+                      if (isArgumentMapReadOnly) {
+                        toast.error("Autor on keelanud kaardi redigeerimise.");
+                        return;
+                      }
                       if (searchTerm.length > 1000) {
                         toast.error("Argumendi tekst on liiga pikk!");
                         return;
@@ -181,6 +187,10 @@ function Flow() {
                       key={selectedArgument.id}
                       className={`p-3 pl-9 pb-1 pt-1 border rounded-none hover:bg-gray-100 cursor-pointer flex flex-col! justify-between items-center `}
                       onClick={async () => {
+                        if (isArgumentMapReadOnly) {
+                          toast.error("Autor on keelanud kaardi redigeerimise.");
+                          return;
+                        }
                         if (!parentArgumentId) {
                           toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
                           return;

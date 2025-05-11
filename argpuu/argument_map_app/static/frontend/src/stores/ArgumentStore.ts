@@ -6,6 +6,7 @@ import { applyDagreLayout } from '../utils/dagreLayout';
 
 const useArgumentStore = create<AppState>((set, get) => ({
   argumentMapId: "",
+  isArgumentMapReadOnly: false,
   nodes: [],
   edges: [],
 
@@ -208,9 +209,9 @@ const useArgumentStore = create<AppState>((set, get) => ({
   },
   
 
-  getMap: async (argumentMapId: string) => {
+  getMap: async (argumentMapId: string, isArgumentMapReadOnly?: boolean) => {
     const csrfToken = getCSRFToken();
-
+    console.log("read",isArgumentMapReadOnly)
     const fetchData = async (endpoint: string) => {
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -234,6 +235,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
         console.warn("No root argument found for this map.");
         return;
       }
+      console.log("Root argument:", rootArgument);
       const rootNode: AppNode = {
         ...rootArgument[0],
         type: 'argument-node',
@@ -296,7 +298,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
         };
       });
 
-      
+      console.log("Siiani jõudnud", nodes, operatorNodes, edges)
 
       const positionedNodes = applyDagreLayout(
         [rootNode].concat(operatorNodes).concat(nodes),
@@ -305,6 +307,7 @@ const useArgumentStore = create<AppState>((set, get) => ({
       
       set({
         argumentMapId: argumentMapId,
+        isArgumentMapReadOnly: isArgumentMapReadOnly,
         nodes: positionedNodes,
         edges: edges,
       });

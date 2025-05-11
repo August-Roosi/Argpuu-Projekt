@@ -19,6 +19,7 @@ export type OperatorNodes = Node<{ argument_ids: string[]; operator_type: 'AND' 
 export type AppNode = Node | BuiltInNode | OperatorNodes | ArgumentNodes ;
 export type AppState = {
     argumentMapId: string;
+    isArgumentMapReadOnly: boolean;
     nodes: AppNode[];
     edges: Edge[];
     onNodesChange: OnNodesChange<AppNode>;
@@ -36,7 +37,7 @@ export type AppState = {
     createArgumentWithConnection: (parentNodeId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}) => Promise<boolean>;
     createSiblingArgument: (operatorId: string, {content, newArgumentId}:{content?: string, newArgumentId?: string}) => Promise<boolean>;
     getArguments: (id?: string) => Promise<ArgumentNodes[]>;
-    getMap: (id: string) => void;
+    getMap: (id: string, isArgumentMapReadOnly?:boolean) => void;
 
     switchStance: (nodeId: string) => Promise<[0 | 1, string]>;
     undo: () => Promise<[0 | 1, string]>;

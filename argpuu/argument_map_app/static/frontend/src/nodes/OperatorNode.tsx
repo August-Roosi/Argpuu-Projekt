@@ -16,6 +16,7 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
 
 
     const nodes = useArgumentStore((state: AppState) => state.nodes);
+    const isArgumentMapReadOnly = useArgumentStore((state: AppState) => state.isArgumentMapReadOnly);
 
     const maxContentLength = nodes
         .filter((node) => argument_ids.includes(node.id))
@@ -60,10 +61,12 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
                 width: `${(argument_ids.length * 10.6) + 1.8}em`,
                 height: `${baseHeightRem + lines * lineHeightRem}rem `,
             }}
-        >
+        >   
+        {isArgumentMapReadOnly ? (<></>):(
+            
             <div className='flex flex-row-reverse h-full w-full pl-2'>
 
-                <button className='px-1 h-full hover:bg-white/30 basis-2 tr-rounded-lg! br-rounded-lg!' onClick={() => onCreate(true, id)}>
+                <button className={`px-1 h-full hover:bg-white/30 basis-2 tr-rounded-lg! br-rounded-lg!`} onClick={() => onCreate(true, id)}>
                     <div className='flex flex-row justify-center'>
                         {/* <VscGroupByRefType className='w-4 h-4 rotate-90' /> */}
                         <IoMdAddCircleOutline className='w-4 h-4 rotate-90' />
@@ -92,6 +95,7 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
 
 
             </div>
+        )}
 
 
             <Handle type="target" className='invisible' position={Position.Top} id="target" />

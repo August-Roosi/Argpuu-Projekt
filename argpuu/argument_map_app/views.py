@@ -28,10 +28,24 @@ def view_user_argument_maps(request, id=None):
     if id:
         # Specific argument map view
         argument_map = get_object_or_404(ArgumentMap, id=id)
-        return render(request, "view_argument_map.html", {"argument_map": argument_map})
+        
+        is_author = argument_map.author == request.user
+        is_publicly_editable = argument_map.is_publicly_editable
+        
+        
+        if not is_author and not is_publicly_editable:
+            is_read_only = True
+        else:
+            is_read_only = False
+            
+
+            
+        return render(request, "view_argument_map.html", context={"argument_map": argument_map, "is_read_only": is_read_only})
     else:
         # List view / create form
-        argument_maps = ArgumentMap.objects.filter(author=request.user).order_by('-created_at')
+        argument_maps = ArgumentMap.objects.filter(
+            Q(is_publicly_editable=True) | Q(author=request.user)
+        ).order_by('-created_at')
         return render(request, "list_user_argument_maps.html", {"argument_maps": argument_maps})
 
 
@@ -234,29 +248,35 @@ class ArgumentViewSet(viewsets.ModelViewSet):
                 operator.arguments.values_list('id', flat=True) for operator in operators
             ))
             
-            queryset = queryset.exclude(
+            return queryset.exclude(
             Q(id__in=argument_ids_to_exclude) |
             Q(argument_map__isnull=False)
                 )
 
 
         # Filter by specific argument IDs
+        queryset = Argument.objects.filter()
+        
         argument_ids = self.request.query_params.get('ids')
         print(argument_ids)
         if argument_ids is not None:
             id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
             if id_list:
-                queryset = queryset.filter(id__in=id_list)
+                print("ID List:", id_list)
+                return queryset.filter(id__in=id_list)
             else:
-                queryset = queryset.none()  
+                return queryset.none()  
+                
 
         # Filter by a specific argument_map ID
+        queryset = Argument.objects.filter()
+        
         filter_map_id = self.request.query_params.get('argument_map')
         if filter_map_id is not None:
             if filter_map_id.isdigit():
-                queryset = queryset.filter(argument_map__id=int(filter_map_id))
+                return queryset.filter(argument_map__id=int(filter_map_id))
             else:
-                queryset = queryset.none() 
+                return queryset.none() 
 
         return queryset
     

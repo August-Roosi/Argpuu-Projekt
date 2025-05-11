@@ -17,6 +17,7 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
         return node && 'content' in node.data ? node.data.content as string : "";
     });
 
+    const isArgumentMapReadOnly = useArgumentStore((state: AppState) => state.isArgumentMapReadOnly);
     const updateNodeContent = useArgumentStore((state: AppState) => state.updateNodeContent);
     const deleteNode = useArgumentStore((state: AppState) => state.deleteNode);
     const createArgument = useModalStore((state) => state.openModal);
@@ -101,8 +102,8 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
 
 
             <div className='flex flex-col '>
+                {isArgumentMapReadOnly ? (<></>):(
                 <div className={`flex ${!is_root ? "justify-between" : "justify-start"} items-center rounded-t-none`}>
-
                     <div className={`flex flex-row justify-end `}>
                         <button className='px-0' onClick={() => onCreate(false, id)}>
                             <PiTreeStructureDuotone className='w-5 h-5 rotate-90' />
@@ -114,9 +115,9 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
 
                     </div>
 
-                </div>
+                </div>)}
 
-                {isEditable ? (
+                {isEditable && !isArgumentMapReadOnly ? (
                     <ResizeTextArea
                         placeholder="Sisesta tekst"
                         id="text"
