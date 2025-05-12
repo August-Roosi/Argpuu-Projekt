@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  root: './', // Ensure the root is set correctly if `index.html` is not in the root
+  publicDir: 'src', // If your `index.html` is in the public folder
   build: {
     manifest: true,
     rollupOptions: {
