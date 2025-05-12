@@ -14,6 +14,7 @@ __pycache__/
 # Ignore log files
 *.log
 
+# Ignore static and nodes 
 staticfiles/
 node_modules/
 
