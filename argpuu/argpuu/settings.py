@@ -33,7 +33,7 @@ SECRET_KEY =  os.getenv("SECRET_KEY")
 DEBUG = os.getenv('DEBUG', '0') == '1'
 CORS_ORIGIN_ALLOW_ALL = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 LOGIN_URL = '/login/'
 
 
