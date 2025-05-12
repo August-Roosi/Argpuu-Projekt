@@ -1,1 +1,1 @@
-web: cd argpuu && gunicorn argpuu.wsgi
+web: gunicorn argpuu.wsgi
