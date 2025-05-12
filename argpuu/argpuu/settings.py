@@ -96,9 +96,7 @@ WSGI_APPLICATION = "argpuu.wsgi.application"
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://user:password@hostname:port/dbname'
-    )
+    'default': dj_database_url.config()
 
 
     # 'default': {
