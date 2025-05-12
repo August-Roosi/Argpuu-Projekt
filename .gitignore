@@ -5,9 +5,6 @@ argpuu-env/
 *.pyc
 __pycache__/
 
-# Ignore all migration files in all Django apps
-**/migrations/*
-
 # Ignore .env files
 **/.env
 
