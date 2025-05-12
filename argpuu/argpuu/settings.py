@@ -144,7 +144,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'argument_map_app/static/frontend/dist',
+    BASE_DIR / 'argument_map_app/static/',
 ]
 STATIC_ROOT = '/vol/web/staticfiles'
 
