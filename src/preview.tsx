@@ -2,10 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
-    Background,
     Edge,
 } from '@xyflow/react';
-import 'reactflow/dist/style.css';
+import './styles/actions.css';
+import './styles/index.css';
+
 import { AppNode } from './nodes/types';
 
 const nodes: AppNode[] = [
