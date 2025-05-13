@@ -71,7 +71,7 @@ const edges: Edge[] = [
 
 ReactDOM.createRoot(document.getElementById('root-preview')!).render(
     <React.StrictMode>
-        <div style={{ height: '100%', width: '100%' }} className='bg-gray-700'>
+        <div style={{ height: '100%', width: '100%' }} >
             <ReactFlowProvider>
 
                 <ReactFlow
