@@ -6,6 +6,8 @@ import {
 } from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
+import '@xyflow/react/dist/style.css';
+
 
 import { AppNode } from './nodes/types';
 
