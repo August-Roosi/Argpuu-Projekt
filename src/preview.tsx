@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
-    Edge, 
-    Background, BackgroundVariant, ReactFlowProvider } from '@xyflow/react';
+    Edge,
+    Background, BackgroundVariant, ReactFlowProvider
+} from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
 import '@xyflow/react/dist/style.css';
@@ -16,7 +17,7 @@ import { AppNode } from './nodes/types';
 const nodes: AppNode[] = [
     {
         id: '1',
-        data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
+        data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: [] },
         position: { x: 105, y: 0 },
         type: 'argument-node',
         draggable: true,
@@ -24,21 +25,21 @@ const nodes: AppNode[] = [
     {
         id: '4',
         position: { x: 0, y: 200 },
-        data: { label: '', argument_ids: [2, 3], operator_type: 'AND', stance: 'for'},
+        data: { label: '', argument_ids: [2, 3], operator_type: 'AND', stance: 'for' },
         type: 'operator-node',
         draggable: true,
     },
-        {
+    {
         id: '2',
-        data: { content: 'Kõik lumi on valge', is_root: false, argument_map: []},
+        data: { content: 'Kõik lumi on valge', is_root: false, argument_map: [] },
         position: { x: 20, y: 10 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
     },
-        {
+    {
         id: '3',
-        data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
+        data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: [] },
         position: { x: 190, y: 10 },
         type: 'argument-node',
         extent: 'parent',
@@ -47,13 +48,13 @@ const nodes: AppNode[] = [
     {
         id: '5',
         position: { x: 0, y: 400 },
-        data: { label: '', argument_ids: [6], operator_type: 'OR', stance: 'against'},
+        data: { label: '', argument_ids: [6], operator_type: 'OR', stance: 'against' },
         type: 'operator-node',
         draggable: true,
     },
-        {
+    {
         id: '6',
-        data: { content: 'Vahel on lumi kollane', is_root: false, argument_map: []},
+        data: { content: 'Vahel on lumi kollane', is_root: false, argument_map: [] },
         position: { x: 20, y: 10 },
         type: 'argument-node',
         extent: 'parent',
@@ -67,6 +68,20 @@ const edges: Edge[] = [
 
 ];
 
+useEffect(() => {
+    const pane = document.querySelector('.react-flow__pane');
+    if (pane) {
+        const handler = (e: Event) => {
+            (e as WheelEvent).stopPropagation(); // let it bubble up
+        };
+        pane.addEventListener('wheel', handler, { passive: true });
+
+        return () => {
+            pane.removeEventListener('wheel', handler);
+        };
+    }
+}, []);
+
 
 
 ReactDOM.createRoot(document.getElementById('root-preview')!).render(
@@ -75,26 +90,26 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
             <ReactFlowProvider>
 
                 <ReactFlow
-                edgeTypes={edgeTypes}
-                nodeTypes={nodeTypes}
-                defaultEdgeOptions={{ type: "smoothstep" }}
-                nodesDraggable={true}
-                draggable={true}
-                nodes={nodes}
-                edges={edges}
-                fitView
-                zoomOnScroll={false}  
-                zoomOnPinch={false}
-                zoomOnDoubleClick={false}
-                panOnScroll={false}      
-                panOnDrag={false}
-                fitViewOptions={{ padding: 0.1 }}
+                    edgeTypes={edgeTypes}
+                    nodeTypes={nodeTypes}
+                    defaultEdgeOptions={{ type: "smoothstep" }}
+                    nodesDraggable={true}
+                    draggable={true}
+                    nodes={nodes}
+                    edges={edges}
+                    fitView
+                    zoomOnScroll={false}
+                    zoomOnPinch={false}
+                    zoomOnDoubleClick={false}
+                    panOnScroll={false}
+                    panOnDrag={false}
+                    fitViewOptions={{ padding: 0.1 }}
                 >
                 </ReactFlow>
-            <Background variant={BackgroundVariant.Dots} />
+                <Background variant={BackgroundVariant.Dots} />
             </ReactFlowProvider>
 
         </div>
-        
+
     </React.StrictMode>
 );
