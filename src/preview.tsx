@@ -42,7 +42,7 @@ const nodes: AppNode[] = [
 
 const edges: Edge[] = [];
 
-ReactDOM.createRoot(document.getElementById('preview-root')!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <div style={{ height: 400 }}>
             <ReactFlow nodes={nodes} edges={edges} />
