@@ -31,7 +31,7 @@ const nodes: AppNode[] = [
         {
         id: '2',
         data: { content: 'Kõik lumi on valge', is_root: false, argument_map: []},
-        position: { x: 10, y: 10 },
+        position: { x: 20, y: 10 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -39,16 +39,32 @@ const nodes: AppNode[] = [
         {
         id: '3',
         data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
-        position: { x: 180, y: 10 },
+        position: { x: 190, y: 10 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
     },
-
+    {
+        id: '5',
+        position: { x: 0, y: 400 },
+        data: { label: '', argument_ids: [6], operator_type: 'OR', stance: 'against'},
+        type: 'operator-node',
+        draggable: true,
+    },
+        {
+        id: '6',
+        data: { content: 'Vahel on lumi kollane', is_root: false, argument_map: []},
+        position: { x: 20, y: 10 },
+        type: 'argument-node',
+        extent: 'parent',
+        parentId: '5',
+    },
 ];
 
 const edges: Edge[] = [
-    { id: '1-4', source: '1', target: '4' }
+    { id: '1-4', source: '1', target: '4' },
+    { id: '2-5', source: '2', target: '5' }
+
 ];
 
 
@@ -67,7 +83,7 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
             zoomOnScroll={false}  
             panOnScroll={false}      
             panOnDrag={false}
-            fitViewOptions={{ padding: 0.6 }}
+            fitViewOptions={{ padding: 0.5 }}
 
 
             />
