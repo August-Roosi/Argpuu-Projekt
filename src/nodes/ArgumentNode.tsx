@@ -12,7 +12,8 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
     const { id, data } = node_state;
     const { is_root } = data;
 
-    const content: string = useArgumentStore((state: AppState) => {
+    let content:string = data.content
+    content = useArgumentStore((state: AppState) => {
         const node = state.nodes.find((node) => node.id === id);
         return node && 'content' in node.data ? node.data.content as string : "";
     });

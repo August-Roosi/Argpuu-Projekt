@@ -19,12 +19,14 @@ const nodes: AppNode[] = [
         data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
         position: { x: 0, y: 0 },
         type: 'argument-node',
+        draggable: true,
     },
     {
         id: '4',
         position: { x: 0, y: 100 },
         data: { label: '', argument_ids: [2, 3], operator_type: 'AND', stance: 'for'},
         type: 'operator-node',
+        draggable: true,
     },
         {
         id: '2',
@@ -37,7 +39,7 @@ const nodes: AppNode[] = [
         {
         id: '3',
         data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
-        position: { x: 0, y: 100 },
+        position: { x: 200, y: 100 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -62,7 +64,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             fitView
             zoomOnScroll={false}  
             panOnScroll={false}      
-            draggable={false}
 
 
             />
