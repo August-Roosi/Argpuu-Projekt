@@ -155,6 +155,7 @@ USE_TZ = True
 STATIC_ROOT = BASE_DIR / 'staticfiles' 
 STATICFILES_DIRS = [
     BASE_DIR / 'dist/assets',
+    BASE_DIR / "argument_map_app/static",  
 ]
 STATIC_URL = '/staticfiles/' 
 
