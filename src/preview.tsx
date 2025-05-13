@@ -53,7 +53,7 @@ const edges: Edge[] = [
 
 
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root-preview')!).render(
     <React.StrictMode>
         <div style={{ height: '100%', width: '100%' }}>
             <ReactFlow
