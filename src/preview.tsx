@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
     Edge,
-    Background
 } from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
@@ -68,11 +67,10 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
             zoomOnScroll={false}  
             panOnScroll={false}      
             panOnDrag={false}
-            fitViewOptions={{ padding: 0.3 }}
+            fitViewOptions={{ padding: 0.6 }}
 
 
             />
-            <Background />
             
         </div>
         
