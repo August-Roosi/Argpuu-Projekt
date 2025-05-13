@@ -7,6 +7,8 @@ import {
 import './styles/actions.css';
 import './styles/index.css';
 import '@xyflow/react/dist/style.css';
+import { nodeTypes } from './nodes/types';
+import { edgeTypes } from './edges';
 
 
 import { AppNode } from './nodes/types';
@@ -50,8 +52,21 @@ const edges: Edge[] = [
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <div style={{ height: 400 }}>
-            <ReactFlow nodes={nodes} edges={edges} />
+        <div style={{ height: '100%', width: '100%' }}>
+            <ReactFlow
+            edgeTypes={edgeTypes}
+            nodeTypes={nodeTypes}
+            
+            nodes={nodes}
+            edges={edges}
+            fitView
+            zoomOnScroll={false}  
+            panOnScroll={false}      
+            draggable={false}
+
+
+            />
         </div>
+        
     </React.StrictMode>
 );
