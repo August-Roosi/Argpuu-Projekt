@@ -17,7 +17,7 @@ const nodes: AppNode[] = [
     {
         id: '1',
         data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
-        position: { x: 115, y: 0 },
+        position: { x: 100, y: 0 },
         type: 'argument-node',
         draggable: true,
     },
@@ -83,7 +83,7 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
             zoomOnScroll={false}  
             panOnScroll={false}      
             panOnDrag={false}
-            fitViewOptions={{ padding: 0.5 }}
+            fitViewOptions={{ padding: 0.3 }}
 
 
             />
