@@ -89,8 +89,8 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
                 >
                 <Background variant={BackgroundVariant.Dots} />
                 </ReactFlow>
-            </ReactFlowProvider>
             <Background variant={BackgroundVariant.Dots} />
+            </ReactFlowProvider>
 
         </div>
         
