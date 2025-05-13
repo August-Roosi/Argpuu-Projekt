@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
     Edge, 
-    Background, BackgroundVariant } from '@xyflow/react';
+    Background, BackgroundVariant, ReactFlowProvider } from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
 import '@xyflow/react/dist/style.css';
@@ -72,6 +72,8 @@ const edges: Edge[] = [
 ReactDOM.createRoot(document.getElementById('root-preview')!).render(
     <React.StrictMode>
         <div style={{ height: '100%', width: '100%' }} className='bg-gray-700'>
+            <ReactFlowProvider>
+
             <ReactFlow
             edgeTypes={edgeTypes}
             nodeTypes={nodeTypes}
@@ -88,6 +90,8 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
 
             />
             <Background variant={BackgroundVariant.Dots} />
+            </ReactFlowProvider>
+
         </div>
         
     </React.StrictMode>
