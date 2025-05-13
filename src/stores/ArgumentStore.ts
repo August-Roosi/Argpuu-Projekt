@@ -6,7 +6,7 @@ import { applyDagreLayout } from '../utils/dagreLayout';
 
 const useArgumentStore = create<AppState>((set, get) => ({
   argumentMapId: "",
-  isArgumentMapReadOnly: false,
+  isArgumentMapReadOnly: true,
   nodes: [],
   edges: [],
 

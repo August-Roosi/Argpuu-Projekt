@@ -16,9 +16,7 @@ export function OperatorNode(node_state: NodeProps<OperatorNodes>) {
 
 
     const nodes = useArgumentStore((state: AppState) => state.nodes);
-    const isArgumentMapReadOnly = useArgumentStore(
-    (state) => state.isArgumentMapReadOnly ?? true
-    );
+    const isArgumentMapReadOnly = useArgumentStore( (state) => state.isArgumentMapReadOnly );
 
     const maxContentLength = nodes
         .filter((node) => argument_ids.includes(node.id))

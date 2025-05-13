@@ -10,17 +10,10 @@ import { AiTwotoneDelete } from "react-icons/ai";
 
 export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
     const { id, data } = node_state;
-    const { is_root } = data;
+    const { is_root, content } = data;
 
-    let content:string = data.content
-    content = useArgumentStore((state: AppState) => {
-        const node = state.nodes.find((node) => node.id === id);
-        return node && 'content' in node.data ? node.data.content as string : "";
-    });
 
-    const isArgumentMapReadOnly = useArgumentStore(
-    (state) => state.isArgumentMapReadOnly ?? true
-    );
+    const isArgumentMapReadOnly = useArgumentStore( (state) => state.isArgumentMapReadOnly);
     const updateNodeContent = useArgumentStore((state: AppState) => state.updateNodeContent);
     const deleteNode = useArgumentStore((state: AppState) => state.deleteNode);
     const createArgument = useModalStore((state) => state.openModal);
