@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
     Edge,
+    Background
 } from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
@@ -17,13 +18,13 @@ const nodes: AppNode[] = [
     {
         id: '1',
         data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
-        position: { x: 0, y: 0 },
+        position: { x: 115, y: 0 },
         type: 'argument-node',
         draggable: true,
     },
     {
         id: '4',
-        position: { x: 0, y: 100 },
+        position: { x: 0, y: 200 },
         data: { label: '', argument_ids: [2, 3], operator_type: 'AND', stance: 'for'},
         type: 'operator-node',
         draggable: true,
@@ -31,7 +32,7 @@ const nodes: AppNode[] = [
         {
         id: '2',
         data: { content: 'Kõik lumi on valge', is_root: false, argument_map: []},
-        position: { x: 10, y: 1.5 },
+        position: { x: 10, y: 10 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -39,7 +40,7 @@ const nodes: AppNode[] = [
         {
         id: '3',
         data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
-        position: { x: 180, y: 1.5 },
+        position: { x: 180, y: 10 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -59,6 +60,7 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
             <ReactFlow
             edgeTypes={edgeTypes}
             nodeTypes={nodeTypes}
+            defaultEdgeOptions={{ type: "smoothstep" }}
             
             nodes={nodes}
             edges={edges}
@@ -70,6 +72,8 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
 
 
             />
+            <Background />
+            
         </div>
         
     </React.StrictMode>
