@@ -16,6 +16,12 @@ const nodes: AppNode[] = [
         position: { x: 0, y: 0 },
         type: 'argument-node',
     },
+    {
+        id: '4',
+        position: { x: 0, y: 100 },
+        data: {},
+        type: 'operator-node',
+    },
         {
         id: '2',
         data: { label: 'Kõik lumi on valge' },
@@ -32,12 +38,7 @@ const nodes: AppNode[] = [
         extent: 'parent',
         parentId: '4',
     },
-        {
-        id: '4',
-        position: { x: 0, y: 100 },
-        data: {},
-        type: 'operator-node',
-    },
+
 ];
 
 const edges: Edge[] = [];
