@@ -87,7 +87,6 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
                 panOnDrag={false}
                 fitViewOptions={{ padding: 0.1 }}
                 >
-                <Background variant={BackgroundVariant.Dots} />
                 </ReactFlow>
             <Background variant={BackgroundVariant.Dots} />
             </ReactFlowProvider>
