@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'index.css' %}">
 </head>
 <body>
-    <div id="root">
+    <div class="w-1/2 border-1" id="root">
     </div>
 
     <script>
@@ -19,7 +19,6 @@
         window.argumentMapTitle = "{{ argument_map.title }}"; 
         window.isArgumentMapReadOnly = {{ is_read_only|yesno:"true,false" }};
 
-        
     </script>
 
     <script type="module" src="{% static 'index.js' %}"></script>

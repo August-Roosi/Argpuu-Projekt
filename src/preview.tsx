@@ -14,19 +14,19 @@ import { AppNode } from './nodes/types';
 const nodes: AppNode[] = [
     {
         id: '1',
-        data: { label: 'Kõik lumememmed on valged' },
+        data: { content: 'Kõik lumememmed on valged' },
         position: { x: 0, y: 0 },
         type: 'argument-node',
     },
     {
         id: '4',
         position: { x: 0, y: 100 },
-        data: {},
+        data: { label: '' },
         type: 'operator-node',
     },
         {
         id: '2',
-        data: { label: 'Kõik lumi on valge' },
+        data: { content: 'Kõik lumi on valge' },
         position: { x: 50, y: 100 },
         type: 'argument-node',
         extent: 'parent',
@@ -34,7 +34,7 @@ const nodes: AppNode[] = [
     },
         {
         id: '3',
-        data: { label: 'Kõik lumememmed on lumest' },
+        data: { content: 'Kõik lumememmed on lumest' },
         position: { x: 0, y: 100 },
         type: 'argument-node',
         extent: 'parent',
@@ -43,7 +43,10 @@ const nodes: AppNode[] = [
 
 ];
 
-const edges: Edge[] = [];
+const edges: Edge[] = [
+    { id: '1-4', source: '1', target: '4' }
+
+];
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
