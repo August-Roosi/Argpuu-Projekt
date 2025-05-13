@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
@@ -68,19 +68,6 @@ const edges: Edge[] = [
 
 ];
 
-useEffect(() => {
-    const pane = document.querySelector('.react-flow__pane');
-    if (pane) {
-        const handler = (e: Event) => {
-            (e as WheelEvent).stopPropagation(); // let it bubble up
-        };
-        pane.addEventListener('wheel', handler, { passive: true });
-
-        return () => {
-            pane.removeEventListener('wheel', handler);
-        };
-    }
-}, []);
 
 
 
