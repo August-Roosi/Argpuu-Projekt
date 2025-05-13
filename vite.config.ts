@@ -10,7 +10,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
+        index: path.resolve(__dirname, 'index.html'),
         preview: path.resolve(__dirname, 'preview.html'),
       },
       output: {
