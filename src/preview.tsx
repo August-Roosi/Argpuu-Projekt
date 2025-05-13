@@ -78,11 +78,14 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
                 edgeTypes={edgeTypes}
                 nodeTypes={nodeTypes}
                 defaultEdgeOptions={{ type: "smoothstep" }}
-                
+                nodesDraggable={true}
+                draggable={true}
                 nodes={nodes}
                 edges={edges}
                 fitView
                 zoomOnScroll={false}  
+                zoomOnPinch={false}
+                zoomOnDoubleClick={false}
                 panOnScroll={false}      
                 panOnDrag={false}
                 fitViewOptions={{ padding: 0.1 }}
