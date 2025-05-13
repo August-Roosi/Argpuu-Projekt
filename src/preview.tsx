@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
     ReactFlow,
-    Edge,
-} from '@xyflow/react';
+    Edge, 
+    Background } from '@xyflow/react';
 import './styles/actions.css';
 import './styles/index.css';
 import '@xyflow/react/dist/style.css';
@@ -87,7 +87,7 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
 
 
             />
-            
+            <Background variant="dots" gap={16} size={1} />
         </div>
         
     </React.StrictMode>
