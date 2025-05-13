@@ -18,7 +18,9 @@ export function ArgumentNode(node_state: NodeProps<ArgumentNodes>) {
         return node && 'content' in node.data ? node.data.content as string : "";
     });
 
-    const isArgumentMapReadOnly = useArgumentStore((state: AppState) => state.isArgumentMapReadOnly);
+    const isArgumentMapReadOnly = useArgumentStore(
+    (state) => state.isArgumentMapReadOnly ?? true
+    );
     const updateNodeContent = useArgumentStore((state: AppState) => state.updateNodeContent);
     const deleteNode = useArgumentStore((state: AppState) => state.deleteNode);
     const createArgument = useModalStore((state) => state.openModal);

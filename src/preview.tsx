@@ -31,7 +31,7 @@ const nodes: AppNode[] = [
         {
         id: '2',
         data: { content: 'Kõik lumi on valge', is_root: false, argument_map: []},
-        position: { x: 50, y: 100 },
+        position: { x: 10, y: 1.5 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -39,7 +39,7 @@ const nodes: AppNode[] = [
         {
         id: '3',
         data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
-        position: { x: 200, y: 100 },
+        position: { x: 180, y: 1.5 },
         type: 'argument-node',
         extent: 'parent',
         parentId: '4',
@@ -49,8 +49,9 @@ const nodes: AppNode[] = [
 
 const edges: Edge[] = [
     { id: '1-4', source: '1', target: '4' }
-
 ];
+
+
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
@@ -64,6 +65,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             fitView
             zoomOnScroll={false}  
             panOnScroll={false}      
+            panOnDrag={false}
+            fitViewOptions={{ padding: 0.3 }}
 
 
             />
