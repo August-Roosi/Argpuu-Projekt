@@ -13,9 +13,6 @@
     "isEntry": true,
     "imports": [
       "_index.js"
-    ],
-    "css": [
-      "assets/main.css"
     ]
   },
   "preview.html": {
