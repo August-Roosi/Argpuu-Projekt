@@ -17,7 +17,7 @@ const nodes: AppNode[] = [
     {
         id: '1',
         data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
-        position: { x: 100, y: 0 },
+        position: { x: 105, y: 0 },
         type: 'argument-node',
         draggable: true,
     },
@@ -62,8 +62,8 @@ const nodes: AppNode[] = [
 ];
 
 const edges: Edge[] = [
-    { id: '1-4', source: '1', target: '4' },
-    { id: '2-5', source: '2', target: '5' }
+    { id: '1-4', source: '1', target: '4', animated: true },
+    { id: '2-5', source: '2', target: '5', animated: true },
 
 ];
 
@@ -85,7 +85,7 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
                 zoomOnScroll={false}  
                 panOnScroll={false}      
                 panOnDrag={false}
-                fitViewOptions={{ padding: 0.3 }}
+                fitViewOptions={{ padding: 0.1 }}
                 >
                 <Background variant={BackgroundVariant.Dots} />
                 </ReactFlow>
