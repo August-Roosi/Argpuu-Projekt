@@ -1,18 +1,18 @@
 {
-  "_index.js": {
-    "file": "assets/index.js",
+  "_index2.js": {
+    "file": "assets/index2.js",
     "name": "index",
     "css": [
       "assets/index.css"
     ]
   },
   "index.html": {
-    "file": "assets/main.js",
-    "name": "main",
+    "file": "assets/index.js",
+    "name": "index",
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_index.js"
+      "_index2.js"
     ]
   },
   "preview.html": {
@@ -21,7 +21,7 @@
     "src": "preview.html",
     "isEntry": true,
     "imports": [
-      "_index.js"
+      "_index2.js"
     ]
   }
 }
