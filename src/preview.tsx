@@ -16,19 +16,19 @@ import { AppNode } from './nodes/types';
 const nodes: AppNode[] = [
     {
         id: '1',
-        data: { content: 'Kõik lumememmed on valged' },
+        data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: []},
         position: { x: 0, y: 0 },
         type: 'argument-node',
     },
     {
         id: '4',
         position: { x: 0, y: 100 },
-        data: { label: '' },
+        data: { label: '', argument_ids: [2, 3], operator_type: 'AND', stance: 'for'},
         type: 'operator-node',
     },
         {
         id: '2',
-        data: { content: 'Kõik lumi on valge' },
+        data: { content: 'Kõik lumi on valge', is_root: false, argument_map: []},
         position: { x: 50, y: 100 },
         type: 'argument-node',
         extent: 'parent',
@@ -36,7 +36,7 @@ const nodes: AppNode[] = [
     },
         {
         id: '3',
-        data: { content: 'Kõik lumememmed on lumest' },
+        data: { content: 'Kõik lumememmed on lumest', is_root: false, argument_map: []},
         position: { x: 0, y: 100 },
         type: 'argument-node',
         extent: 'parent',
