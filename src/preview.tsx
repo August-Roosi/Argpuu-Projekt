@@ -74,23 +74,23 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
         <div style={{ height: '100%', width: '100%' }} className='bg-gray-700'>
             <ReactFlowProvider>
 
-            <ReactFlow
-            edgeTypes={edgeTypes}
-            nodeTypes={nodeTypes}
-            defaultEdgeOptions={{ type: "smoothstep" }}
-            
-            nodes={nodes}
-            edges={edges}
-            fitView
-            zoomOnScroll={false}  
-            panOnScroll={false}      
-            panOnDrag={false}
-            fitViewOptions={{ padding: 0.3 }}
-
-
-            />
-            <Background variant={BackgroundVariant.Dots} />
+                <ReactFlow
+                edgeTypes={edgeTypes}
+                nodeTypes={nodeTypes}
+                defaultEdgeOptions={{ type: "smoothstep" }}
+                
+                nodes={nodes}
+                edges={edges}
+                fitView
+                zoomOnScroll={false}  
+                panOnScroll={false}      
+                panOnDrag={false}
+                fitViewOptions={{ padding: 0.3 }}
+                >
+                <Background variant={BackgroundVariant.Dots} />
+                </ReactFlow>
             </ReactFlowProvider>
+            <Background variant={BackgroundVariant.Dots} />
 
         </div>
         
