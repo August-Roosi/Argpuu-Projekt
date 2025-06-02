@@ -4,8 +4,8 @@ import path from 'path'
 
 
 export default defineConfig({
-  root: './', // Ensure the root is set correctly if `index.html` is not in the root
-  publicDir: 'src', // If your `index.html` is in the public folder
+  root: './', 
+  publicDir: 'src', 
   build: {
     manifest: true,
     rollupOptions: {

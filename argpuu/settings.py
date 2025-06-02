@@ -96,23 +96,12 @@ WSGI_APPLICATION = "argpuu.wsgi.application"
 
 
 DATABASES = {
-    # 'default': dj_database_url.config(
-    #     default='postgres://user:password@hostname:port/dbname'
-    # )
 
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600
     )
 
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': os.getenv('DB_NAME', 'argpuu'),
-    #     'USER': os.getenv('DB_USER', 'august'),
-    #     'PASSWORD': os.getenv('DB_PASSWORD', ''),
-    #     'HOST': os.getenv('DB_HOST', 'localhost'),
-    #     'PORT': os.getenv('DB_PORT', '5432'),
-    # }
 }
 
 
