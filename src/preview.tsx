@@ -17,7 +17,7 @@ import { AppNode } from './nodes/types';
 const nodes: AppNode[] = [
     {
         id: '1',
-        data: { content: 'Kõik lumememmed on valged onjuuuu', is_root: true, argument_map: [] },
+        data: { content: 'Kõik lumememmed on valged', is_root: true, argument_map: [] },
         position: { x: 105, y: 0 },
         type: 'argument-node',
         draggable: true,
