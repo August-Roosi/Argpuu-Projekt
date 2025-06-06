@@ -3,8 +3,7 @@ import {
   Background,
 } from '@xyflow/react';
 import { useEffect, useRef } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
-import { IoMdClose } from "react-icons/io";
+import { Toaster } from 'react-hot-toast';
 import '@xyflow/react/dist/style.css';
 
 import { AppState, nodeTypes } from "./nodes/types";
@@ -15,6 +14,7 @@ import useModalStore from './stores/ModalStore';
 import useSearchStore from './stores/SearchStore';
 import Titlebar from './components/Titlebar';
 import Toolbar from './components/Toolbar';
+import ArgumentCreationTerminal from './components/ArgumentCreationTerminal';
 
 const argumentMapId = window.argumentMapId;
 const argumentMapsViewUrl = window.argumentMapsViewUrl;
@@ -43,13 +43,11 @@ const selector = (state: AppState) => ({
 function Flow() {
 
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap, createArgumentWithConnection, createSiblingArgument } = useArgumentStore(useShallow(selector),);
-  const { isOpen, isSibling, nodeId: parentArgumentId, closeModal } = useModalStore();
-  const { searchTerm,
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, getMap } = useArgumentStore(useShallow(selector),);
+  const { isOpen, closeModal } = useModalStore();
+  const {
     setSearchTerm,
-    filteredArguments,
     getArgumentsFromApi,
-    loadingArguments,
   } = useSearchStore();
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -90,7 +88,6 @@ function Flow() {
     console.log("Current edges:", edges);
   };
 
-  const results = filteredArguments(parentArgumentId ?? "");
 
   return (
     <div style={{ height: '100%' }} className='bg-gray-700'>
@@ -109,117 +106,13 @@ function Flow() {
         fitView
         zoomOnScroll={false}  
         panOnScroll={true}      
+
         fitViewOptions={{ padding: 0.3 }}
       >
         <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} />
         <Toolbar/>
-        <Background />
-
-        {isOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-gray-200 rounded-none w-[600px] max-h-[40vh] overflow-hidden shadow-lg" ref={modalRef}>
-              <div className="flex-row justify-between items-center p-1 bg-gray-50">
-                <div className='flex justify-end'>
-                  <button className='px-1' onClick={()=> handleClose()}>
-                    <IoMdClose />
-                  </button>
-                </div>
-
-
-                <input
-                  type="text"
-                  autoFocus
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={async (e) => {
-
-                    if (e.key === "Enter") {
-                      if (isArgumentMapReadOnly) {
-                        toast.error("Autor on keelanud kaardi redigeerimise.");
-                        return;
-                      }
-                      if (searchTerm.length > 1000) {
-                        toast.error("Argumendi tekst on liiga pikk!");
-                        return;
-                      }
-                      if (!parentArgumentId) {
-                        toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
-                        return;
-                      }
-                      let result;
-                      if (isSibling){
-                        result = await createSiblingArgument(parentArgumentId, {content: searchTerm});
-                      } else {
-                        result = await createArgumentWithConnection(parentArgumentId, {content: searchTerm});
-                      }
-                      if (!result) {
-                        toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
-                        return;
-                      }
-                      handleClose();
-                      toast.success("Argument loodud!");
-                    }
-
-                  }}
-                  placeholder="Otsi argumente või tee uus.."
-                  className="w-full p-2 pl-8 rounded mb-4 text-xl bg-gray-50 focus:outline-none focus:bg-gray-50"
-                />
-              </div>
-              
-              <div className='overflow-y-scroll max-h-[27vh] border-solid border-gray-300'>
-              <div className='flex justify-between items-center'>
-                <div className='p-3 text-gray-600 text-sm'>
-                  Teiste kaartide argumendid:
-
-                </div>
-                <div className='px-1 mr-3 text-sm bg-gray-300'>{results.length}</div>
-              </div>
-
-              {loadingArguments ? (
-                <p className="text-gray-600 p-3">Laen argumente..</p>
-              ) : results.length === 0 ? (
-                <p className="text-gray-600 p-3">Argumente ei leitud.</p>
-              ) : (
-                
-                <ul className="space-y-1 ">
-                  {results.map((selectedArgument) => (
-                    <li
-                      key={selectedArgument.id}
-                      className={`p-3 pl-9 pb-1 pt-1 border rounded-none hover:bg-gray-100 cursor-pointer flex flex-col! justify-between items-center `}
-                      onClick={async () => {
-                        if (isArgumentMapReadOnly) {
-                          toast.error("Autor on keelanud kaardi redigeerimise.");
-                          return;
-                        }
-                        if (!parentArgumentId) {
-                          toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
-                          return;
-                        }
-                        let result
-                        if (isSibling){
-                          result = await createSiblingArgument(parentArgumentId, {newArgumentId: selectedArgument.id});
-                        } else { 
-                          result = await createArgumentWithConnection(parentArgumentId, {newArgumentId: selectedArgument.id});
-                        }
-                        if (!result) {
-                          toast.error("Tekkis viga, palun proovi uuesti või saada arendajale tagasisidet.");
-                          return;
-                        }
-                        handleClose
-                        toast.success("Argument kopeeritud teisest kaardist!");
-
-                      }}
-                    >
-                      <p className={`font-medium ${selectedArgument.data.content!== "" ? "": "text-gray-500 text-sm"}`}>{selectedArgument.data.content !== "" ? selectedArgument.data.content : "tekst puudu"}</p>
-                      <p className="text-sm text-gray-500 text-center">ID: {selectedArgument.id}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              </div>
-            </div>
-          </div>
-        )}
+        <Background/>
+        {isOpen && (<ArgumentCreationTerminal isArgumentMapReadOnly={isArgumentMapReadOnly}/>)}
       </ReactFlow>
 
 
