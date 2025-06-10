@@ -4,10 +4,19 @@ from django.utils.html import format_html
 
 @admin.register(ArgumentMap)
 class ArgumentMapAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'description', 'author', 'created_at', 'updated_at')
+    list_display = ('id', 'title', 'description', 'author', 'created_at', 'updated_at', 'get_editors', 'get_viewers')
     list_filter = ('author', 'created_at')
     search_fields = ('title',)
 
+    def get_editors(self, obj):
+        return ", ".join([user.username for user in obj.editors.all()])
+    get_editors.short_description = 'Editors'
+
+    def get_viewers(self, obj):
+        return ", ".join([user.username for user in obj.viewers.all()])
+    get_viewers.short_description = 'Viewers'
+    
+    
 @admin.register(Argument)
 class ArgumentAdmin(admin.ModelAdmin):
     list_display = ('id', 'content', 'created_at', 'updated_at')

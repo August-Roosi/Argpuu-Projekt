@@ -5,10 +5,14 @@ from django.contrib.auth.models import User
 import uuid
 
 
+
+
 class ArgumentMap(models.Model):
     title = models.CharField(max_length=255)  
     description = models.CharField(max_length=255, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="argument_trees")
+    viewers = models.ManyToManyField(User, related_name="viewers_argument_maps", blank=True)
+    editors = models.ManyToManyField(User, related_name="editors_argument_maps", blank=True)
     contributors = models.ManyToManyField(User, related_name="collaborations", blank=True)
     is_public = models.BooleanField(default=False)
     is_publicly_editable = models.BooleanField(default=False)

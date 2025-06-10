@@ -14,12 +14,14 @@ import useModalStore from './stores/ModalStore';
 import useSearchStore from './stores/SearchStore';
 import Titlebar from './components/Titlebar';
 import Toolbar from './components/Toolbar';
+import Sidebar from './components/Sidebar';
 import ArgumentCreationTerminal from './components/ArgumentCreationTerminal';
 
 const argumentMapId = window.argumentMapId;
 const argumentMapsViewUrl = window.argumentMapsViewUrl;
 const argumentMapTitle = window.argumentMapTitle;
 const argumentMapAuthor = window.argumentMapAuthor;
+const isAuthor = window.isAuthor;
 const isArgumentMapReadOnly = window.isArgumentMapReadOnly;
 
 
@@ -51,7 +53,6 @@ function Flow() {
   } = useSearchStore();
 
   const modalRef = useRef<HTMLDivElement>(null);
-
 
 
   const handleClose = () => {
@@ -109,8 +110,9 @@ function Flow() {
 
         fitViewOptions={{ padding: 0.3 }}
       >
-        <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} />
+        <Titlebar title={argumentMapTitle} author={argumentMapAuthor} targetUrl={argumentMapsViewUrl} argumentMapId={argumentMapId} />
         <Toolbar/>
+        <Sidebar title={argumentMapTitle} author={argumentMapAuthor} argumentMapId={argumentMapId} isAuthor={isAuthor}/>
         <Background/>
         {isOpen && (<ArgumentCreationTerminal isArgumentMapReadOnly={isArgumentMapReadOnly}/>)}
       </ReactFlow>

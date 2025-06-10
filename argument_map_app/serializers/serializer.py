@@ -2,6 +2,31 @@ from rest_framework import serializers
 from ..models import Argument, ArgumentMap, Operator, Connection, Operator
 from ..utils.create_log import create_log
 from rest_framework.exceptions import ValidationError
+from django.contrib.auth.models import User
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+        
+class ArgumentMapSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    contributors = UserSerializer(many=True, read_only=True)
+    editors = UserSerializer(many=True, read_only=True)
+    viewers = UserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ArgumentMap
+        fields = ['id', 'title', 'description', 'author', 'contributors', 'editors', 'viewers', 'is_public', 'is_publicly_editable', 'likes', 'dislikes', 'created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['id'] = str(instance.id)
+        return data
+    
+
 
 class ArgumentSerializer(serializers.ModelSerializer):
     data = serializers.JSONField(write_only=True)
@@ -85,7 +110,6 @@ class ConnectionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         data = validated_data.pop('data', {}) 
-        print("vallidated",validated_data)
         argument_map_id = self.context['argument_map_id']
         argument_map = ArgumentMap.objects.get(id=argument_map_id)
 

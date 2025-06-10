@@ -17,6 +17,7 @@
         window.argumentMapId = "{{ argument_map.id }}";
         window.argumentMapAuthor = "{{ argument_map.author }}";
         window.argumentMapTitle = "{{ argument_map.title }}"; 
+        window.isAuthor = {{ is_author|yesno:"true,false" }};
         window.isArgumentMapReadOnly = {{ is_read_only|yesno:"true,false" }};
 
     </script>

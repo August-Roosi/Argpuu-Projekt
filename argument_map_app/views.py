@@ -1,10 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .serializers.serializer import ArgumentSerializer, ConnectionSerializer
+from .serializers.serializer import UserSerializer, ArgumentMapSerializer, ArgumentSerializer, ConnectionSerializer, OperatorSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from rest_framework import viewsets
 from .models import Argument, ArgumentMap, Connection, Log, Operator
-from .serializers.serializer import OperatorSerializer
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from rest_framework import status
@@ -19,6 +18,9 @@ from django.contrib import messages
 from .forms import CustomSignupForm
 from django.http import JsonResponse
 from django.contrib.auth.models import User
+import json
+
+
 
 def view_home(request):
     return render(request, "home.html")
@@ -33,14 +35,14 @@ def view_user_argument_maps(request, id=None):
         is_publicly_editable = argument_map.is_publicly_editable
         
         
-        if not is_author and not is_publicly_editable:
-            is_read_only = True
-        else:
+        if is_author or is_publicly_editable or request.user in argument_map.editors.all():
             is_read_only = False
+        else:
+            is_read_only = True
             
 
             
-        return render(request, "view_argument_map.html", context={"argument_map": argument_map, "is_read_only": is_read_only})
+        return render(request, "view_argument_map.html", context={"argument_map": argument_map, "is_read_only": is_read_only, "is_author": is_author})
     else:
         # List view / create form
         argument_maps = ArgumentMap.objects.filter(
@@ -51,7 +53,16 @@ def view_user_argument_maps(request, id=None):
 
 @login_required
 def view_all_argument_maps(request):
-    argument_maps = ArgumentMap.objects.filter(is_public=True).order_by('-created_at')
+    toggle = request.GET.get("toggle")  
+    user = request.user 
+    
+    if toggle == "shared":
+        argument_maps = ArgumentMap.objects.filter(
+                Q(editors=user) | Q(viewers=user)
+            ).distinct()
+    else:
+        argument_maps = ArgumentMap.objects.filter(is_public=True).order_by('-created_at')
+        
 
     for map in argument_maps:
         map.likes_count = map.likes.count()  
@@ -59,14 +70,14 @@ def view_all_argument_maps(request):
         map.total_likes = map.likes_count - map.dislikes_count  
         map.user_reaction = "neutral"   
 
-        if map.likes.filter(id=request.user.id).exists():
+        if map.likes.filter(id=user.id).exists():
             map.user_reaction = "liked"  
-        elif map.dislikes.filter(id=request.user.id).exists():
+        elif map.dislikes.filter(id=user.id).exists():
             map.user_reaction = "disliked"  
             
     argument_maps = sorted(argument_maps, key=lambda x: x.total_likes, reverse=True)
 
-    return render(request, "list_all_argument_maps.html", {"argument_maps": argument_maps})
+    return render(request, "list_all_argument_maps.html", {"argument_maps": argument_maps, "toggle": toggle})
 
 
 @login_required
@@ -228,9 +239,104 @@ def view_check_username(request):
     exists = User.objects.filter(username=username).exists()
     return JsonResponse({"exists": exists})
 
+def add_editor(request, map_id):
+    if request.method == "POST":
+        argument_map = get_object_or_404(ArgumentMap, id=map_id)
+        if argument_map.author == request.user: 
+            data = json.loads(request.body) 
+            user_id = data.get('user_id')
+            try:
+                print(request.body, "Adding editor with user_id:", user_id, flush=True)
+                user = User.objects.get(id=user_id)
+                argument_map.editors.add(user)
+                return redirect('view_argument_map', id=map_id)
+            except User.DoesNotExist:
+                print(request, "Kasutajat ei leitud.", flush=True)
+        else:
+            print(request, "Sul puudub õigus lisada toimetajaid.")
+    return redirect('view_argument_map', id=map_id)
+def remove_editor(request, map_id):
+    if request.method == "POST":
+        argument_map = get_object_or_404(ArgumentMap, id=map_id)
+        if argument_map.author == request.user:  
+            data = json.loads(request.body) 
+            user_id = data.get('user_id')
+            try:
+                user = User.objects.get(id=user_id)
+                argument_map.editors.remove(user)
+                return redirect('view_argument_map', id=map_id)
+            except User.DoesNotExist:
+                print(request, "Kasutajat ei leitud.")
+        else:
+            print(request, "Sul puudub õigus eemaldada toimetajaid.")
+    return redirect('view_argument_map', id=map_id)
+
+def add_viewer(request, map_id):
+    if request.method == "POST":
+        argument_map = get_object_or_404(ArgumentMap, id=map_id)
+        if argument_map.author == request.user:  
+            data = json.loads(request.body) 
+            user_id = data.get('user_id')
+            try:
+                user = User.objects.get(id=user_id)
+                argument_map.viewers.add(user)
+                return redirect('view_argument_map', id=map_id)
+            except User.DoesNotExist:
+                print(request, "Kasutajat ei leitud.")
+        else:
+            print(request, "Sul puudub õigus lisada vaatlejaid.")
+    return redirect('view_argument_map', id=map_id)
+def remove_viewer(request, map_id):
+    if request.method == "POST":
+        argument_map = get_object_or_404(ArgumentMap, id=map_id)
+        if argument_map.author == request.user:  
+            data = json.loads(request.body) 
+            user_id = data.get('user_id')
+            try:
+                user = User.objects.get(id=user_id)
+                argument_map.viewers.remove(user)
+                argument_map.editors.remove(user) 
+                return redirect('view_argument_map', id=map_id)
+            except User.DoesNotExist:
+                print(request, "Kasutajat ei leitud.")
+        else:
+            print(request, "Sul puudub õigus eemaldada vaatlejaid.")
+    return redirect('view_argument_map', id=map_id)
 
 
+def get_viewers(request, map_id):
+    argument_map = get_object_or_404(ArgumentMap, id=map_id)
+    viewers = argument_map.viewers.all()
+    return JsonResponse({
+        "viewers": [{"id": user.id, "username": user.username} for user in viewers]
+    })
+def get_editors(request, map_id):
+    argument_map = get_object_or_404(ArgumentMap, id=map_id)
+    editors = argument_map.editors.all()
+    return JsonResponse({
+        "editors": [{"id": user.id, "username": user.username} for user in editors]
+    })
 
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):  
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    def get_queryset(self):
+        return User.objects.exclude(id=self.request.user.id)
+
+
+class ArgumentMapViewSet(viewsets.ModelViewSet):  
+    permission_classes = [IsAuthenticated]
+    queryset = ArgumentMap.objects.all()
+    serializer_class = ArgumentMapSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['title', 'description', 'author', 'is_public', 'is_publicly_editable']
+    
+    def get_queryset(self):
+        print("User:", self.request.user)
+        print("Request Data:", self.request.body)
+        return super().get_queryset()
 
 class ArgumentViewSet(viewsets.ModelViewSet):
     queryset = Argument.objects.all()
@@ -259,8 +365,6 @@ class ArgumentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=201)
     
     def get_queryset(self):
-        print("User:", self.request.user)
-        print("Request Data:", self.request.query_params)
 
         queryset = Argument.objects.filter(author=self.request.user)
 
@@ -286,7 +390,6 @@ class ArgumentViewSet(viewsets.ModelViewSet):
         queryset = Argument.objects.filter()
         
         argument_ids = self.request.query_params.get('ids')
-        print(argument_ids)
         if argument_ids is not None:
             id_list = [int(arg_id) for arg_id in argument_ids.split(',') if arg_id.strip().isdigit()]
             if id_list:

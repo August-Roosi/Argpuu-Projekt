@@ -6,9 +6,19 @@
 
 {% block content %}
     <div class="max-w-4xl mx-auto">
-        <div class="mb-4">
-            <h1 class="text-6xl font-bold">Kõigi argumendikaardid</h1>
+        <div class="mb-4 w-full max-w-4xl">
+            <div class="flex items-center justify-between">
 
+            <label class="flex items-center cursor-pointer ml-4">
+                <div class="relative">
+                    <input id="customToggle" type="checkbox" class="sr-only peer">
+                    <div class="w-72 h-20 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition text-center"><h1 class="absolute top-6 left-24 text-3xl font-medium" id="toggleHeading">Sinuga</h1></div>
+                    <div id="toggle-switch" class="absolute w-16 h-16 bg-white rounded-full left-3 top-2  transform transition {%if toggle == "shared"%}peer-checked:translate-x-[12.7rem]{%endif%}"></div>
+                </div>
+                <span class="ml-2 text-3xl font-medium">jagatud argumendikaardid</span>
+            </label>
+
+            </div>
         </div>
         <div class="h-20"></div>
         <input type="text" id="searchInput" placeholder="Otsi kaarti pealkirja järgi..." 
@@ -93,6 +103,28 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
+        const toggle = document.getElementById("customToggle");
+        const toggleSwitch = document.getElementById("toggle-switch");
+        const toggleHeading = document.getElementById("toggleHeading");
+        const toggleValue = "{{ toggle|escapejs }}";
+        if (toggleValue === "shared") {
+            toggle.checked = true;
+            toggleHeading.textContent = "Sinuga";
+        } else {
+            toggle.checked = false;
+            toggleHeading.textContent = "Kõigiga";
+        }
+
+    
+        toggle.addEventListener("change", () => {
+            const params = new URLSearchParams(window.location.search);
+            params.set("toggle", toggle.checked ? "shared" : "all");
+            window.location.search = params.toString();
+        });
+
+
+
         const searchInput = document.getElementById('searchInput');
         const mapItems = document.querySelectorAll('.argument-map-item');
 
@@ -160,6 +192,8 @@
             });
         });
     });
+
+
     </script>
 
 {% endblock %}

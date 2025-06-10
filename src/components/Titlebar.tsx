@@ -1,14 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Panel } from '@xyflow/react';
 import { IoArrowBack } from "react-icons/io5";
+import { getCSRFToken } from '../utils/getCSRFToken';
+import toast from 'react-hot-toast';
+
 
 interface TitleBarProps {
     title: string;
     targetUrl: string;
     author: string;
+    argumentMapId: string;
 }
 
-const Titlebar: React.FC<TitleBarProps> = ({ title, targetUrl, author }) => {
+const Titlebar: React.FC<TitleBarProps> = ({ title, targetUrl, author, argumentMapId }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentTitle, setCurrentTitle] = useState(title);
     const [isFlashing, setIsFlashing] = useState(false);
@@ -24,14 +28,47 @@ const Titlebar: React.FC<TitleBarProps> = ({ title, targetUrl, author }) => {
 
     const handleBlur = useCallback(() => {
         setIsEditing(false);
-    }, []);
+        updateTitle(currentTitle);
+
+    }, [currentTitle]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             setIsEditing(false);
-        }
-    }, []);
+            updateTitle(currentTitle);
 
+        }
+    }, [currentTitle]);
+
+
+    const csrfToken = getCSRFToken();
+
+    const updateTitle = async (newTitle: string) => {
+        try {
+            const response = await fetch(`/api/argument_maps/${argumentMapId}/`, {
+                method: 'PATCH',
+                headers: new Headers({
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken || '',
+                }),
+                credentials: 'include',
+                body: JSON.stringify({
+                    title: newTitle,
+                }),
+            });
+
+            if (!response.ok) {
+                toast.error("Argumendi uuendamine ebaõnnestus!");
+                return;
+            }
+
+            toast.success("Argument edukalt uuendatud!");
+        } catch (err) {
+            console.error("Error updating argument:", err);
+            toast.error("Tekkis ootamatu viga argumendi uuendamisel!");
+        }
+    };
+    
     useEffect(() => {
         if (isFlashing) {
             const timer = setTimeout(() => setIsFlashing(false), 200); 
