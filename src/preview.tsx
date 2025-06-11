@@ -74,7 +74,7 @@ const edges: Edge[] = [
 ReactDOM.createRoot(document.getElementById('root-preview')!).render(
     <React.StrictMode>
         <div style={{ height: '100%', width: '100%' }} >
-            <ReactFlowProvider>
+        <ReactFlowProvider >
 
                 <ReactFlow
                     edgeTypes={edgeTypes}
@@ -95,9 +95,8 @@ ReactDOM.createRoot(document.getElementById('root-preview')!).render(
                 >
                 </ReactFlow>
                 <Background variant={BackgroundVariant.Dots} />
-            </ReactFlowProvider>
 
+        </ReactFlowProvider>
         </div>
-
     </React.StrictMode>
 );

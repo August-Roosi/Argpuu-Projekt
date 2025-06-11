@@ -6,7 +6,7 @@
 
 {% block content %}
 {% load static %}
-<div class="max-w-10xl mx-auto">
+<div class="max-w-10xl mx-auto px-20 py-0 ">
     <div class="p-4 px-6">
         <h1 class="text-6xl font-bold">ArgPuu</h1>
 
@@ -25,47 +25,108 @@
         <div class="w-full inset-shadow-sm " style="height:700px" id="root-preview"></div>
     </div>
     
-    <div class="h-40 text-4xl p-8 group">
-    Juhend 
-    <span class="material-symbols-outlined rotate-[290deg] inline-block transition-transform duration-300 transform group-hover:-translate-y-2 group-hover:rotate-[380deg]">
+    <div class="h-20"></div>
+    <div class="h-20 text-4xl p-8 group">
+        Juhend 
+        <span class="material-symbols-outlined rotate-[290deg] inline-block transition-transform duration-300 transform group-hover:-translate-y-2 group-hover:rotate-[380deg]">
         swipe_up
-    </span>
+        </span>
     </div>
+    
+    
+</div>
 
 
 
 
-    <div class="flex flex-col justify-between w-full h-90">
-
-            <p class="p-4 text-2xl w-3/4">
-                Üleval on näha lihtne argumendikaart, kus on väide: <b>Kõik lumememmed on valged</b>.
-                Sellel väitel on kaks poolt ja üks vastuargument. Kuna kaks pooltargumenti on ühes kastis, siis piisab ühe pooltargumendi ümberlükkamisest, et kogu väide ümber lükata.
-            </p>
-            <div class="h-20"></div>
-
-            <p class="p-4 text-2xl w-3/4">
-                Argumendikaart on ühe väite tõestamiseks või ümberlükkamiseks aga selles võib olla palju teisi alamväiteid.</p>
-            <div class="h-10"></div>
-
-            <p class="p-4 text-2xl w-3/4"> <b class=" text-shadow-lg">Valged</b> kastikesed on argumendid ning mullid nende ümber on grupid. Kui mulli ümber ei ole siis tegemist on <b>algväitega</b> ehk <b>juurargumendiga</b>.</p>
-            <div class="h-10"></div>
-        
-            <p class="p-4 text-2xl w-3/4"> Kui mull on <span class="text-gray-400"><b>hall</b></span> siis argument on <b>erapooletu</b>
-                , kui on <span class="text-green-400"><b>roheline</b></span> siis on <b>poolt</b> 
-                ja kui  <span class="text-red-400"><b>punane</b></span>  siis on <b>vastu</b>.</p>
-            <div class="h-10"></div>
-
-            <p class="p-4 text-2xl w-3/4">Kui mulli sees on mitu argumenti, siis need kõik sõltuvad üksteisest, see tähendab, et kui üks nendest ümber lükata, siis kogu mulli sees olev on kehtetu.</p>
-            <div class="h-20"></div>
-            
-            <p class="p-4 text-2xl w-3/4">
-                Argumenteerimispuu aitab paremini mõista argumentide ülesehitust ja nende omavahelist loogilist seost, samuti muudab keerukamad vaidlused lihtsamini mõistetavaks.
-            </p>
-            
-        </div>
-        <div class="h-30"></div>
+<div class="px-20 py-20 bg-slate-200">
+    <h2 class="p-4 text-4xl">Mis on argumendikaart?</h2>
+    <p class="p-4 text-2xl w-3/4">
+        Argumendikaart on ühe väite tõestamiseks või ümberlükkamiseks aga selles võib olla palju teisi alamväiteid.</p>
+    <div class="h-10"></div>
+    <p class="p-4 text-2xl w-3/4">
+        Üleval on näha lihtne argumendikaart, kus on väide: <b>"Kõik lumememmed on valged"</b>.
+        Sellel väitel on kaks poolt ja üks vastuargument. Kuna kaks pooltargumenti on ühes kastis, siis piisab ühe pooltargumendi ümberlükkamisest, et kogu väide ümber lükata.
+    </p>
 
 </div>
 
+
+<div class="flex flex-col justify-between w-full h-90 px-20 py-20 bg-gray-100" style=" background-image: radial-gradient(#ccc 1px, transparent 0);background-size: 20px 20px;">
+
+    <h2 class="p-4 text-4xl">Erinevad argumendid</h2>
+
+    <p class="p-4 text-2xl w-3/4"> <b class=" text-shadow-lg">Valged</b> kastikesed on argumendid ning mullid nende ümber on grupid. Kui mulli ümber ei ole siis tegemist on <b>algväitega</b> ehk <b>juurargumendiga</b>.</p>
+    <div class="h-10"></div>
+
+    <p class="p-4 text-2xl w-3/4"> Kui mull on <span class="text-gray-400"><b>hall</b></span> siis argument on <b>erapooletu</b>
+        , kui on <span class="text-green-400"><b>roheline</b></span> siis on <b>poolt</b> 
+        ja kui  <span class="text-red-400"><b>punane</b></span>  siis on <b>vastu</b>.</p>
+
+    <div class="flex justify-center gap-2 items-center">
+        <div class="rounded-xl w-40 h-20 bg-gray-300/50 shadow-md "></div>
+        <div class="rounded-xl w-40 h-20 bg-green-300/50 shadow-md "></div>
+        <div class="rounded-xl w-40 h-20 bg-red-300/50 shadow-md "></div>
+    </div>
+
+
+    <div class="h-10"></div>
+
+    <p class="p-4 text-2xl w-3/4">Kui mulli sees on mitu argumenti, siis need kõik sõltuvad üksteisest, see tähendab, et kui üks nendest ümber lükata, siis kogu mulli sees olev on kehtetu. See tähendab, et argumendid, mis on ühes mullis on JA-ga ühendatud ja need, mis on eraldi harudes on VÕI-ga ühendatud.</p>
+    <div class="flex flex-wrap gap-4">
+
+        <div class="rounded-xl w-[30rem] h-[8rem] bg-gray-300/50 shadow-md flex justify-between items-center px-4"> 
+            <div class="w-[13rem] h-20 bg-gray-100 shadow-sm shadow-gray-600 active:bg-yellow-300 font-medium text-xl flex items-center justify-center">
+                Argument nr 1
+            </div>         
+            <p class="relative right-15 text-xl">JA</p>
+            <div class="w-[13rem] h-20 bg-gray-100 shadow-sm shadow-gray-600 active:bg-yellow-300 font-medium text-xl flex items-center justify-center">
+                <p class="text-center">Argument nr 2</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+        <div class="rounded-xl w-[15rem] h-[8rem] bg-gray-300/50 shadow-md flex justify-between items-center px-4"> 
+            <div class="w-[13rem] h-20 bg-gray-100 shadow-sm shadow-gray-600 active:bg-yellow-300 font-medium text-xl flex items-center justify-center">
+                Argument nr 1
+            </div>         
+
+        </div>
+        <p class="relative right-15 top-12 text-xl">või</p>
+
+        <div class="rounded-xl w-[15rem] h-[8rem] bg-gray-300/50 shadow-md flex justify-between items-center px-4"> 
+            <div class="w-[13rem] h-20 bg-gray-100 shadow-sm shadow-gray-600 active:bg-yellow-300 font-medium text-xl flex items-center justify-center">
+                Argument nr 2
+            </div>         
+
+        </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+<div class="px-20 py-20 bg-slate-200">
+
+    
+    <p class="p-4 text-2xl w-3/4 ">
+        Argumenteerimispuu aitab paremini mõista argumentide ülesehitust ja nende omavahelist loogilist seost, samuti muudab keerukamad vaidlused lihtsamini mõistetavaks.
+    </p>
+    <div class="h-20"></div>
+    
+    <div class="flex justify-center items-center">
+        <a href="/view_user_argument_maps/">
+        <button class="w-60 h-20 bg-gray-100 shadow-sm shadow-gray-600 hover:bg-gray-200 active:bg-yellow-300 font-medium text-xl">
+            Tee enda esimene argumendikaart!
+        </button>
+        </a>            
+    </div>
+
+</div>
+
+
+
+
 <script type="module" src="{% static 'preview.js' %}"></script>
 {% endblock %}
+
